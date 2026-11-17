@@ -1,0 +1,39 @@
+<div class="party">
+  @for (c of characters; track c.id; let i = $index) {
+    <button
+      type="button"
+      tabindex="-1"
+      class="member"
+      [class.active]="state.activeCharacter() === c.id"
+      [attr.aria-pressed]="state.activeCharacter() === c.id"
+      [title]="c.name + ' (' + (i + 1) + ')'"
+      (mousedown)="$event.preventDefault()"
+      (click)="select(c.id)"
+    >
+      <app-character-preview [characterId]="c.id" [size]="40" />
+      <span>{{ c.name }}</span>
+    </button>
+  }
+</div>
+
+<div class="top-right">
+  <span class="location">{{ engine.sceneName() }}</span>
+  <button type="button" tabindex="-1" (mousedown)="$event.preventDefault()" (click)="overlay.open('notebook')">
+    {{ text.notebook }} (N)
+  </button>
+  <button type="button" tabindex="-1" (mousedown)="$event.preventDefault()" (click)="overlay.open('menu')">
+    {{ text.menu }} (Esc)
+  </button>
+</div>
+
+@if (engine.focusLabel(); as label) {
+  <button
+    type="button"
+    tabindex="-1"
+    class="hint"
+    (mousedown)="$event.preventDefault()"
+    (click)="engine.interactWithFocus()"
+  >
+    <kbd>E</kbd> {{ text.interact }}: {{ label }}
+  </button>
+}

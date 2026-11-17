@@ -1,0 +1,52 @@
+import { DEFAULT_SPAWN } from '../../config';
+import { SceneDefinition } from '../../models/scene.model';
+import { CASES } from '../cases';
+import { BASE_SCENES } from './index';
+
+const ALL_SCENES: SceneDefinition[] = [...BASE_SCENES, ...CASES.flatMap((c) => c.scenes)];
+const sceneIds = new Set(ALL_SCENES.map((s) => s.id));
+
+describe.each(ALL_SCENES.map((s) => [s.id, s] as const))('scene "%s"', (_id, scene) => {
+  const width = scene.map[0].length;
+  const height = scene.map.length;
+  const tileAt = (x: number, y: number) => scene.tiles[scene.map[Math.floor(y)]?.[Math.floor(x)]];
+
+  it('has a rectangular map using only known tiles', () => {
+    for (const row of scene.map) {
+      expect(row.length).toBe(width);
+      for (const ch of row) expect(scene.tiles[ch], `unknown tile "${ch}"`).toBeDefined();
+    }
+  });
+
+  it('has a start spawn and all spawns stand on walkable tiles', () => {
+    expect(scene.spawns[DEFAULT_SPAWN]).toBeDefined();
+    for (const [name, spawn] of Object.entries(scene.spawns)) {
+      expect(tileAt(spawn.x, spawn.y - 0.01)?.solid, `spawn "${name}"`).toBe(false);
+    }
+  });
+
+  it('keeps objects inside the map', () => {
+    for (const o of scene.objects) {
+      expect(o.x >= 0 && o.y >= 0 && o.x + o.w <= width && o.y + o.h <= height, o.id).toBe(true);
+    }
+  });
+
+  it('has unique object ids', () => {
+    const ids = scene.objects.map((o) => o.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('links exits to existing scenes and spawns', () => {
+    for (const exit of scene.exits) {
+      expect(sceneIds.has(exit.target), exit.target).toBe(true);
+      const target = ALL_SCENES.find((s) => s.id === exit.target)!;
+      expect(target.spawns[exit.spawn], `${exit.target}.${exit.spawn}`).toBeDefined();
+    }
+  });
+});
+
+describe('cases', () => {
+  it('start in an existing scene', () => {
+    for (const c of CASES) expect(sceneIds.has(c.firstSceneId), c.id).toBe(true);
+  });
+});

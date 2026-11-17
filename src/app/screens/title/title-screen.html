@@ -1,0 +1,26 @@
+<main class="title">
+  <h1>
+    <span class="magnifier" aria-hidden="true">🔍</span>
+    {{ text.gameTitle }}
+  </h1>
+  <p class="subtitle">{{ text.gameSubtitle }}</p>
+
+  <ul class="siblings">
+    @for (c of characters; track c.id) {
+      <li>
+        <app-character-preview [characterId]="c.id" mode="full" [size]="140" />
+        <strong>{{ c.name }}</strong>
+        <span>{{ text.yearsOld(c.age) }}</span>
+      </li>
+    }
+  </ul>
+
+  <div class="buttons">
+    @if (hasSave) {
+      <button type="button" class="btn primary" (click)="continueGame()">{{ text.continueGame }}</button>
+    }
+    <button type="button" class="btn" [class.primary]="!hasSave" (click)="newGame()">{{ text.newGame }}</button>
+  </div>
+
+  <p class="controls">{{ text.controls }}</p>
+</main>

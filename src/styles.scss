@@ -1,0 +1,79 @@
+:root {
+  --ink: #3b2f2f;
+  --paper: #fffbe6;
+  --highlight: #ffe08a;
+  --night: #1d1a2b;
+  font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--ink);
+}
+
+/* Shared look for overlay panels and buttons */
+.panel {
+  width: min(92%, 34em);
+  max-height: 90%;
+  overflow: auto;
+  padding: 1em 1.4em;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 0 5px 0 var(--ink);
+  font-size: clamp(12px, 1.8vw, 16px);
+
+  h2 {
+    margin: 0 0 0.6em;
+  }
+
+  h3 {
+    margin: 1em 0 0.4em;
+  }
+
+  .empty {
+    font-style: italic;
+    opacity: 0.8;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1em;
+  }
+}
+
+.btn {
+  font: inherit;
+  cursor: pointer;
+  color: var(--ink);
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 0.45em 1.1em;
+  box-shadow: 0 3px 0 var(--ink);
+
+  &:hover,
+  &:focus-visible {
+    background: var(--highlight);
+  }
+
+  &:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 var(--ink);
+  }
+
+  &.primary {
+    background: var(--highlight);
+    font-weight: bold;
+  }
+}

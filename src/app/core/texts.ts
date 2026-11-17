@@ -1,0 +1,28 @@
+/** All UI strings in one place (German), so they are easy to change or translate. */
+export const TEXT = {
+  gameTitle: 'Die Detektiv-Geschwister',
+  gameSubtitle: 'Leah, Maja & Nino ermitteln',
+  newGame: 'Neues Spiel',
+  continueGame: 'Weiterspielen',
+  controls:
+    'Pfeiltasten/WASD: Laufen · E/Leertaste: Untersuchen · Tab: Kind wechseln · N: Notizbuch · Esc: Menü',
+  yearsOld: (age: number) => `${age} Jahre`,
+  interact: 'Untersuchen',
+  notebook: 'Notizbuch',
+  menu: 'Menü',
+  close: 'Schließen',
+  caseBoardTitle: 'Fallwand',
+  noCases: 'Noch keine Fälle. Die Detektive warten auf ihren ersten Auftrag!',
+  acceptCase: 'Fall übernehmen',
+  activeCase: 'Aktueller Fall',
+  noActiveCase: 'Kein aktiver Fall',
+  investigators: 'Ermittler',
+  clues: 'Hinweise',
+  noClues: 'Noch keine Hinweise gesammelt.',
+  resume: 'Weiterspielen',
+  save: 'Speichern',
+  saved: 'Gespeichert!',
+  saveFailed: 'Speichern nicht möglich.',
+  toTitle: 'Zum Hauptmenü',
+  noCaseToDepart: 'Wir haben noch gar keinen Fall. Schauen wir mal an der Fallwand nach!',
+} as const;
