@@ -47,6 +47,21 @@ const TRAIL_POINTS_PER_SLOT = Math.round(FOLLOW_SPACING / TRAIL_STEP);
 
 const FADE_SECONDS = 0.25;
 
+/** Walking speed of people in cutscenes (tiles per second). */
+const CUTSCENE_WALK_SPEED = WALK_SPEED * 0.75;
+
+/** A person walking along waypoints during a cutscene (see CaseEventContext.walk). */
+interface Walker {
+  objectId: string;
+  x: number;
+  y: number;
+  facing: Facing;
+  walkTime: number;
+  /** Remaining waypoints; the last one is the object's own position. */
+  path: Point[];
+  onDone?: () => void;
+}
+
 const FACING_VECTORS: Record<Facing, Point> = {
   up: { x: 0, y: -1 },
   down: { x: 0, y: 1 },
@@ -81,6 +96,7 @@ export class GameEngine {
   private lastTimestamp = 0;
   private time = 0;
   private transition: { phase: 'out' | 'in'; t: number; sceneId?: string; spawn?: string } | null = null;
+  private walker: Walker | null = null;
 
   constructor() {
     for (const def of CHARACTERS) {
@@ -170,12 +186,14 @@ export class GameEngine {
   }
 
   private isPaused(): boolean {
-    return this.transition !== null || this.dialogue.isOpen() || this.overlay.isOpen();
+    return this.transition !== null || this.walker !== null || this.dialogue.isOpen() || this.overlay.isOpen();
   }
 
   private update(dt: number): void {
     if (this.transition) {
       this.updateTransition(dt);
+    } else if (this.walker) {
+      this.updateWalker(dt);
     } else if (this.dialogue.isOpen()) {
       if (this.input.consume('interact')) this.dialogue.advance();
     } else if (this.overlay.isOpen()) {
@@ -214,6 +232,54 @@ export class GameEngine {
       this.transition = { phase: 'in', t: 0 };
     } else {
       this.transition = null;
+    }
+  }
+
+  /** Lets a scene person walk into place while everything else waits. */
+  private startWalk(objectId: string, from: Point[], onDone?: () => void): void {
+    const obj = this.visibleObjects().find((o) => o.id === objectId);
+    if (!obj || from.length === 0) {
+      onDone?.();
+      return;
+    }
+    this.walker = {
+      objectId,
+      x: from[0].x,
+      y: from[0].y,
+      facing: obj.facing ?? 'down',
+      walkTime: 0,
+      path: [...from.slice(1), { x: obj.x, y: obj.y }],
+      onDone,
+    };
+  }
+
+  private updateWalker(dt: number): void {
+    const walker = this.walker!;
+    walker.walkTime += dt;
+    let step = CUTSCENE_WALK_SPEED * dt;
+    while (step > 0 && walker.path.length > 0) {
+      const target = walker.path[0];
+      const dx = target.x - walker.x;
+      const dy = target.y - walker.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance > 0.001) {
+        walker.facing = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : dy < 0 ? 'up' : 'down';
+      }
+      if (distance <= step) {
+        walker.x = target.x;
+        walker.y = target.y;
+        walker.path.shift();
+        step -= distance;
+      } else {
+        walker.x += (dx / distance) * step;
+        walker.y += (dy / distance) * step;
+        step = 0;
+      }
+    }
+    if (walker.path.length === 0) {
+      // Arrived: the object is drawn at its own position (and facing) again
+      this.walker = null;
+      walker.onDone?.();
     }
   }
 
@@ -349,6 +415,7 @@ export class GameEngine {
             state: this.state,
             say: (lines, onDone) => this.say(lines, onDone),
             goTo: (sceneId, spawn) => this.changeScene(sceneId, spawn),
+            walk: (objectId, from, onDone) => this.startWalk(objectId, from, onDone),
           });
         } else {
           console.warn(`No handler for event "${interaction.eventId}" on "${obj.id}"`);
@@ -434,7 +501,14 @@ export class GameEngine {
     // Depth-sort everything else by its bottom edge
     const drawables: { depth: number; draw: () => void }[] = [];
     for (const obj of objects) {
-      if (!FLAT_SPRITES.has(obj.sprite)) drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, obj) });
+      if (FLAT_SPRITES.has(obj.sprite)) continue;
+      const walker = this.walker?.objectId === obj.id ? this.walker : null;
+      if (walker) {
+        const moved = { ...obj, x: walker.x, y: walker.y, facing: walker.facing };
+        drawables.push({ depth: walker.y + obj.h, draw: () => drawObject(ctx, moved, walker.walkTime) });
+      } else {
+        drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, obj) });
+      }
     }
     for (const actor of this.actors.values()) {
       drawables.push({

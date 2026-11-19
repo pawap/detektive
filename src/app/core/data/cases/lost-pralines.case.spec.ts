@@ -8,6 +8,7 @@ import { PIRATE_TREASURE_CASE } from './pirate-treasure.case';
 describe('Der Fall der verlorenen Pralinen', () => {
   let state: GameStateService;
   let lastLines: DialogueLine[];
+  let walked: string[];
 
   /** Runs an event and immediately "reads" its dialogue to the end. */
   const run = (eventId: string) => {
@@ -18,6 +19,10 @@ describe('Der Fall der verlorenen Pralinen', () => {
         onDone?.();
       },
       goTo: () => undefined,
+      walk: (id, _from, onDone) => {
+        walked.push(id);
+        onDone?.();
+      },
     };
     LOST_PRALINES_CASE.events![eventId](ctx);
   };
@@ -25,6 +30,7 @@ describe('Der Fall der verlorenen Pralinen', () => {
   beforeEach(() => {
     state = TestBed.inject(GameStateService);
     state.newGame();
+    walked = [];
   });
 
   it('stays locked until the pirate case is solved', () => {
@@ -80,6 +86,16 @@ describe('Der Fall der verlorenen Pralinen', () => {
     expect(lastLines.at(-1)!.text).toContain('0 von 3');
   });
 
+  it('finishes the ending without the walk-in if Papa is already home', () => {
+    state.solveCase(PIRATE_TREASURE_CASE.id);
+    run('talkMama');
+    state.addClue('pralines.confession');
+    state.setFlag('pralines.papaHome', true);
+    run('talkMama');
+    expect(walked).toEqual([]);
+    expect(state.solvedCases()).toContain(LOST_PRALINES_CASE.id);
+  });
+
   it('can be played from start to finish', () => {
     state.solveCase(PIRATE_TREASURE_CASE.id);
     run('talkMama');
@@ -99,6 +115,7 @@ describe('Der Fall der verlorenen Pralinen', () => {
     expect(state.solvedCases()).not.toContain(LOST_PRALINES_CASE.id);
 
     run('talkMama');
+    expect(walked).toEqual(['papa']);
     expect(state.solvedCases()).toContain(LOST_PRALINES_CASE.id);
     expect(state.activeCaseId()).toBeNull();
     expect(state.flag('pralines.papaHome')).toBe(true);

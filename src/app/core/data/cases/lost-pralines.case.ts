@@ -66,6 +66,14 @@ const PAPA_EVIDENCE = [CLUE.paperCup, CLUE.orderBook, CLUE.desk];
 // --- People ------------------------------------------------------------------
 
 const SKIN = '#f6d2b5';
+
+/** Where Papa stands at home: next to Mama, out of the way of anyone talking to her. */
+const PAPA_HOME_SPOT = { x: 8.3, y: 8.7 };
+/** His way in at the end: from the front door into the living room, up to Mama. */
+const PAPA_WALK_IN = [
+  { x: 12.5, y: 13 },
+  { x: 12.5, y: 10.5 },
+];
 /** Drawn like a beard: a chocolate-smeared mouth. */
 const CHOCOLATE_MOUTH = '#6b3e26';
 
@@ -828,7 +836,7 @@ const HOUSE_OBJECTS: SceneObject[] = [
     h: 1.6,
     solid: false,
     showIf: `solved:${PIRATE_TREASURE_CASE.id}`,
-    hideIf: FLAG.papaHome,
+    hideIf: `solved:${CASE_ID}`,
     interaction: { kind: 'event', eventId: 'inspectBox' },
   },
   {
@@ -840,7 +848,7 @@ const HOUSE_OBJECTS: SceneObject[] = [
     w: 1,
     h: 1.6,
     solid: false,
-    showIf: FLAG.papaHome,
+    showIf: `solved:${CASE_ID}`,
     interaction: { kind: 'event', eventId: 'inspectBox' },
   },
   {
@@ -849,11 +857,11 @@ const HOUSE_OBJECTS: SceneObject[] = [
     sprite: 'person',
     npc: PAPA_LOOK,
     facing: 'left',
-    x: 15,
-    y: 12,
+    ...PAPA_HOME_SPOT,
     w: 1,
     h: 1,
     solid: true,
+    // Appears at the front door at the end and walks in (see talkMama)
     showIf: FLAG.papaHome,
     interaction: { kind: 'event', eventId: 'talkPapa' },
   },
@@ -976,6 +984,32 @@ function talkMama(ctx: CaseEventContext): void {
     return;
   }
 
+  const papaComesHome: DialogueLine[] = [
+    { speaker: PAPA, text: 'Hallo, ihr Lieben! Ich bin zu Hause!' },
+    {
+      speaker: PAPA,
+      text: 'Und ich habe etwas mitgebracht: Heute Morgen war ich schon in der Schokoladenfabrik. Eine neue Schachtel Herzpralinen!',
+    },
+    { speaker: 'maja', text: 'DESHALB standen zwei Schachteln im Bestellbuch!' },
+    {
+      speaker: PAPA,
+      text: 'Ich wusste doch, dass die alte fast leer war. Ich hab ja die letzten zwei gegessen.',
+    },
+    { speaker: MAMA, text: 'Oh, mein Schatz! Du bist der Beste.' },
+    { speaker: 'nino', text: 'Schoki für alle!' },
+    {
+      text: 'FALL GELÖST! Die Detektiv-Geschwister haben den Fall der verlorenen Pralinen geknackt.',
+    },
+    { text: 'Und diesmal zählt Mama ihre Pralinen ganz genau. Eins … zwei … mmmh.' },
+  ];
+  const finish = () => ctx.say(papaComesHome, () => state.solveCase(CASE_ID));
+
+  // Papa is already home (e.g. the game was closed during the ending): just finish
+  if (state.flag(FLAG.papaHome)) {
+    finish();
+    return;
+  }
+
   ctx.say(
     [
       {
@@ -1001,26 +1035,11 @@ function talkMama(ctx: CaseEventContext): void {
       { speaker: 'maja', text: 'Mama, du bist eine Naschkatze!' },
       { speaker: MAMA, text: 'Ertappt! Ihr seid wirklich die besten Detektive der Welt.' },
       { text: 'Da geht die Haustür auf.' },
-      { speaker: PAPA, text: 'Hallo, ihr Lieben! Ich bin zu Hause!' },
-      {
-        speaker: PAPA,
-        text: 'Und ich habe etwas mitgebracht: Heute Morgen war ich schon in der Schokoladenfabrik. Eine neue Schachtel Herzpralinen!',
-      },
-      { speaker: 'maja', text: 'DESHALB standen zwei Schachteln im Bestellbuch!' },
-      {
-        speaker: PAPA,
-        text: 'Ich wusste doch, dass die alte fast leer war. Ich hab ja die letzten zwei gegessen.',
-      },
-      { speaker: MAMA, text: 'Oh, mein Schatz! Du bist der Beste.' },
-      { speaker: 'nino', text: 'Schoki für alle!' },
-      {
-        text: 'FALL GELÖST! Die Detektiv-Geschwister haben den Fall der verlorenen Pralinen geknackt.',
-      },
-      { text: 'Und diesmal zählt Mama ihre Pralinen ganz genau. Eins … zwei … mmmh.' },
     ],
     () => {
+      // Papa appears in the doorway and walks over to Mama, then the dialogue goes on
       state.setFlag(FLAG.papaHome, true);
-      state.solveCase(CASE_ID);
+      ctx.walk('papa', PAPA_WALK_IN, finish);
     },
   );
 }

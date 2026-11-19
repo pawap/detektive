@@ -17,6 +17,7 @@ describe('Der Schatz von Käpt’n Klabauter', () => {
         onDone?.();
       },
       goTo: () => undefined,
+      walk: (_id, _from, onDone) => onDone?.(),
     };
     PIRATE_TREASURE_CASE.events![eventId](ctx);
   };

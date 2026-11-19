@@ -13,6 +13,13 @@ export interface CaseEventContext {
   state: GameStateService;
   say(lines: DialogueLine[], onDone?: () => void): void;
   goTo(sceneId: string, spawn?: string): void;
+  /**
+   * A little cutscene: the person `objectId` in the current scene walks from
+   * `from[0]` through the other waypoints (object coordinates, in tiles) to
+   * its own position. The game waits meanwhile; `onDone` runs on arrival
+   * (right away if the object isn't visible).
+   */
+  walk(objectId: string, from: { x: number; y: number }[], onDone?: () => void): void;
 }
 
 export type CaseEventHandler = (ctx: CaseEventContext) => void;

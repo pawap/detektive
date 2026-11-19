@@ -14,7 +14,7 @@ const NPC_SCALE = 1.2;
  * Draws a furniture/prop placeholder. Everything is procedural so the game
  * runs without image assets; swap individual cases for real sprites later.
  */
-export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject): void {
+export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walkTime = 0): void {
   const x = obj.x * T;
   const y = obj.y * T;
   const w = obj.w * T;
@@ -192,7 +192,7 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject): voi
       rect(ctx, x + 18, y + 18, 3, 12, '#2e86c1');
       break;
     case 'person':
-      if (obj.npc) drawPerson(ctx, obj.npc, x + w / 2, y + h - 3, obj.facing ?? 'down');
+      if (obj.npc) drawPerson(ctx, obj.npc, x + w / 2, y + h - 3, obj.facing ?? 'down', walkTime);
       break;
     case 'pedestal':
     case 'pedestalWithChest': {
@@ -492,8 +492,15 @@ function drawPralineBox(
 }
 
 /** A grown-up NPC: a scaled-up character plus optional hat and beard. */
-function drawPerson(ctx: CanvasRenderingContext2D, look: NpcLook, fx: number, fy: number, facing: Facing): void {
-  drawCharacter(ctx, look, fx, fy, facing, 0, NPC_SCALE);
+function drawPerson(
+  ctx: CanvasRenderingContext2D,
+  look: NpcLook,
+  fx: number,
+  fy: number,
+  facing: Facing,
+  walkTime: number,
+): void {
+  drawCharacter(ctx, look, fx, fy, facing, walkTime, NPC_SCALE);
   const { height, headRadius: r } = characterMetrics(look, NPC_SCALE);
   const hx = fx;
   const hy = fy - height + r;
