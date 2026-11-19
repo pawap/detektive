@@ -62,6 +62,11 @@ interface Walker {
   onDone?: () => void;
 }
 
+/** How long a person pauses after turning towards the kids before talking (seconds). */
+const TURN_PAUSE_SECONDS = 0.2;
+
+const OPPOSITE_FACING: Record<Facing, Facing> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
 const FACING_VECTORS: Record<Facing, Point> = {
   up: { x: 0, y: -1 },
   down: { x: 0, y: 1 },
@@ -97,6 +102,10 @@ export class GameEngine {
   private time = 0;
   private transition: { phase: 'out' | 'in'; t: number; sceneId?: string; spawn?: string } | null = null;
   private walker: Walker | null = null;
+  /** Which way scene people look after turning to talk; reset when the scene is entered. */
+  private readonly turnedFacing = new Map<string, Facing>();
+  /** A person who just turned towards the kids; the interaction runs once the pause is over. */
+  private turning: { obj: SceneObject; t: number } | null = null;
 
   constructor() {
     for (const def of CHARACTERS) {
@@ -186,7 +195,13 @@ export class GameEngine {
   }
 
   private isPaused(): boolean {
-    return this.transition !== null || this.walker !== null || this.dialogue.isOpen() || this.overlay.isOpen();
+    return (
+      this.transition !== null ||
+      this.walker !== null ||
+      this.turning !== null ||
+      this.dialogue.isOpen() ||
+      this.overlay.isOpen()
+    );
   }
 
   private update(dt: number): void {
@@ -194,6 +209,13 @@ export class GameEngine {
       this.updateTransition(dt);
     } else if (this.walker) {
       this.updateWalker(dt);
+    } else if (this.turning) {
+      this.turning.t += dt;
+      if (this.turning.t >= TURN_PAUSE_SECONDS) {
+        const obj = this.turning.obj;
+        this.turning = null;
+        this.runInteraction(obj);
+      }
     } else if (this.dialogue.isOpen()) {
       if (this.input.consume('interact')) this.dialogue.advance();
     } else if (this.overlay.isOpen()) {
@@ -242,6 +264,8 @@ export class GameEngine {
       onDone?.();
       return;
     }
+    // After walking the person ends up looking the way the scene defines again
+    this.turnedFacing.delete(objectId);
     this.walker = {
       objectId,
       x: from[0].x,
@@ -389,7 +413,24 @@ export class GameEngine {
     }
   }
 
+  /** People first turn towards the kids, then the interaction starts. */
   private interact(obj: SceneObject): void {
+    if (obj.sprite === 'person') {
+      const towardsKids = OPPOSITE_FACING[this.party[0].facing];
+      if (this.facingOf(obj) !== towardsKids) {
+        this.turnedFacing.set(obj.id, towardsKids);
+        this.turning = { obj, t: 0 };
+        return;
+      }
+    }
+    this.runInteraction(obj);
+  }
+
+  private facingOf(obj: SceneObject): Facing {
+    return this.turnedFacing.get(obj.id) ?? obj.facing ?? 'down';
+  }
+
+  private runInteraction(obj: SceneObject): void {
     const interaction = obj.interaction;
     switch (interaction?.kind) {
       case 'dialogue':
@@ -443,6 +484,8 @@ export class GameEngine {
       actor.moving = false;
     }
     this.rebuildTrail();
+    this.turnedFacing.clear();
+    this.turning = null;
     this.exitLocked = true;
     this.focus = null;
     this.focusLabel.set(null);
@@ -507,7 +550,8 @@ export class GameEngine {
         const moved = { ...obj, x: walker.x, y: walker.y, facing: walker.facing };
         drawables.push({ depth: walker.y + obj.h, draw: () => drawObject(ctx, moved, walker.walkTime) });
       } else {
-        drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, obj) });
+        const shown = this.turnedFacing.has(obj.id) ? { ...obj, facing: this.facingOf(obj) } : obj;
+        drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, shown) });
       }
     }
     for (const actor of this.actors.values()) {
