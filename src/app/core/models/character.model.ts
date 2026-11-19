@@ -2,7 +2,8 @@ export type CharacterId = 'leah' | 'maja' | 'nino';
 
 export type Facing = 'up' | 'down' | 'left' | 'right';
 
-export type HairStyle = 'long' | 'pigtails' | 'short';
+/** `sparse`: very short, thin hair (the scalp shows through). */
+export type HairStyle = 'long' | 'pigtails' | 'short' | 'sparse';
 
 /** Everything the procedural sprite renderer needs to draw a character. */
 export interface CharacterAppearance {

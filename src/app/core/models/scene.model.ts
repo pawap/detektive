@@ -82,7 +82,8 @@ export type ObjectSprite =
   | 'sign'
   | 'chocolateVat'
   | 'conveyor'
-  | 'workbench';
+  | 'computerDesk'
+  | 'computerDeskCrumbs';
 
 /** Look of a non-player character drawn with the `person` sprite. */
 export interface NpcLook extends CharacterAppearance {

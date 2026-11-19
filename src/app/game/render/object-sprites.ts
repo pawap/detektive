@@ -394,25 +394,28 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject): voi
       }
       break;
     }
-    case 'workbench': {
-      rect(ctx, x + 4, y + 10, 5, h - 10, '#7a4b2a');
-      rect(ctx, x + w - 9, y + 10, 5, h - 10, '#7a4b2a');
-      rect(ctx, x + 2, y + 2, w - 4, 10, '#c19a69');
-      rect(ctx, x + 2, y + 10, w - 4, 3, '#a0703d');
-      // Sawdust, a saw, a plank and a few golden praline cups
-      ellipse(ctx, x + w * 0.3, y + 6, 10, 3, '#f0d9a0');
-      ellipse(ctx, x + w * 0.62, y + 7, 8, 2.5, '#f0d9a0');
-      rect(ctx, x + 8, y - 2, 30, 5, '#e0b981');
-      ctx.fillStyle = '#bdc3c7';
-      ctx.beginPath();
-      ctx.moveTo(x + w - 40, y + 4);
-      ctx.lineTo(x + w - 18, y + 4);
-      ctx.lineTo(x + w - 18, y - 2);
-      ctx.closePath();
-      ctx.fill();
-      rect(ctx, x + w - 18, y - 3, 7, 7, '#c0392b');
-      for (const cx of [x + w * 0.45, x + w * 0.5, x + w * 0.55])
-        circle(ctx, cx, y + 6, 2.5, '#d4ac0d');
+    case 'computerDesk':
+    case 'computerDeskCrumbs': {
+      const c = color ?? '#8e9eab';
+      rect(ctx, x + 4, y + 10, 4, h - 10, '#5d6d7e');
+      rect(ctx, x + w - 8, y + 10, 4, h - 10, '#5d6d7e');
+      rect(ctx, x + 2, y + 2, w - 4, 10, '#f4f6f8');
+      rect(ctx, x + 2, y + 10, w - 4, 3, '#c5ccd3');
+      // Monitor with code on it
+      rect(ctx, x + w / 2 - 3, y - 4, 6, 7, '#3d3d3d');
+      roundRect(ctx, x + w / 2 - 20, y - 26, 40, 24, 2, '#2c2c34');
+      rect(ctx, x + w / 2 - 17, y - 23, 34, 18, '#1e2b3a');
+      const code = ['#5dade2', '#f1c40f', '#58d68d', '#ec7063', '#5dade2'];
+      code.forEach((cc, i) => rect(ctx, x + w / 2 - 15 + (i % 2) * 4, y - 21 + i * 3.3, 10 + ((i * 7) % 14), 1.6, cc));
+      // Keyboard and mug
+      rect(ctx, x + w / 2 - 14, y + 4, 28, 5, c);
+      roundRect(ctx, x + 8, y + 1, 7, 8, 1, '#e74c3c');
+      if (obj.sprite !== 'computerDeskCrumbs') break;
+      // Crumbs and golden praline cups
+      for (const [dx, dy] of [[-0.32, 6], [-0.28, 8], [0.3, 7], [0.36, 5], [0.33, 9]] as const) {
+        circle(ctx, x + w / 2 + dx * w, y + dy, 1.2, '#d4a056');
+      }
+      for (const dx of [0.28, 0.36, 0.44]) circle(ctx, x + w * (0.5 + dx * 0.9) - 8, y + 6, 2.5, '#d4ac0d');
       break;
     }
     case 'box':

@@ -111,7 +111,11 @@ function drawHair(
   r: number,
   facing: Facing,
 ): void {
-  const R = r * 1.08;
+  const sparse = look.hairStyle === 'sparse';
+  const R = sparse ? r * 1.02 : r * 1.08;
+  ctx.save();
+  // Thin hair: a see-through, close-cropped cap
+  if (sparse) ctx.globalAlpha = 0.5;
   ctx.fillStyle = look.hairColor;
   ctx.beginPath();
   if (facing === 'up') {
@@ -128,8 +132,10 @@ function drawHair(
   ctx.closePath();
   ctx.fill();
 
+  ctx.restore();
+
   // Fringe bumps for a softer hairline
-  if (facing === 'down') {
+  if (facing === 'down' && !sparse) {
     for (let i = -2; i <= 2; i++) circle(ctx, hx + i * r * 0.38, hy - r * 0.1, r * 0.24, look.hairColor);
   }
 
@@ -156,6 +162,7 @@ function drawHair(
       break;
     }
     case 'long':
+    case 'sparse':
       break;
   }
 }

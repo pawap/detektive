@@ -21,8 +21,8 @@ export const TILESET: Record<string, TileDefinition> = {
   c: { solid: false, pattern: 'path', base: '#b9b4ab', detail: '#8f8a80' },
   '=': { solid: false, pattern: 'wood', base: '#a87a4a', detail: '#7f5a33' },
   w: { solid: true, pattern: 'water', base: '#3f8fc9', detail: '#8cc7ee' },
-  // Kindergarten, chocolate factory & workshop
+  // Kindergarten, chocolate factory & office
   k: { solid: false, pattern: 'carpet', base: '#f4d58d', detail: '#ecc56b' },
   y: { solid: false, pattern: 'checker', base: '#f3e6d8', detail: '#d9b99b' },
-  o: { solid: false, pattern: 'wood', base: '#d9b382', detail: '#c19a69' },
+  o: { solid: false, pattern: 'carpet', base: '#aab7c4', detail: '#9aa8b6' },
 };

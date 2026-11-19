@@ -93,7 +93,7 @@ describe('Der Fall der verlorenen Pralinen', () => {
     run('talkChocolatier');
     state.activeCharacter.set('leah');
     run('inspectOrderBook');
-    run('inspectWorkbench');
+    run('inspectDesk');
     run('talkPapa');
     expect(state.hasClue('pralines.confession')).toBe(true);
     expect(state.solvedCases()).not.toContain(LOST_PRALINES_CASE.id);

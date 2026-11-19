@@ -37,7 +37,7 @@ src/app/
       cases/index.ts          case registry
       cases/pirate-treasure.case.ts   case 1: „Der Schatz von Käpt’n Klabauter“ (museum + harbour)
       cases/lost-pralines.case.ts     case 2: „Der Fall der verlorenen Pralinen“ (unlocks after case 1;
-                                      kindergarten, playground, chocolate factory, Papa's workshop; Mama & Papa at home)
+                                      kindergarten, playground, chocolate factory, Papa's office; Mama & Papa at home)
       world.ts                all scenes, with the cases' `extraObjects` merged in
     services/
       game-state.service.ts   progress: scene, flags, items, clues, cases, save/load (localStorage)

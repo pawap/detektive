@@ -11,8 +11,10 @@ import { PIRATE_TREASURE_CASE } from './pirate-treasure.case';
  * Mama's heart-shaped pralines – a present from Papa – have vanished, although
  * "there were still lots left". The trail leads through the kindergarten
  * (chocolate faces, but only birthday cake), the playground (a golden praline
- * cup with sawdust on top of the slide) and the chocolate factory (order book:
- * bought by the joinery next to the playground) to Papa's workshop. Papa admits
+ * cup with pastry crumbs on top of the slide – the office people next door
+ * picnic there with baked goods every lunch break) and the chocolate factory
+ * (order book: bought by the software office at the playground) to Papa's
+ * office. Papa, a software developer who usually works from home, admits
  * to eating two or three. Asked again, Mama admits there were probably only two
  * left – she ate the rest herself. Papa comes home with a new box.
  *
@@ -25,7 +27,7 @@ const CASE_ID = 'lost-pralines';
 const KITA = 'pralines-kita';
 const PLAYGROUND = 'pralines-playground';
 const FACTORY = 'pralines-factory';
-const WORKSHOP = 'pralines-workshop';
+const OFFICE = 'pralines-office';
 
 const MAMA = 'Mama';
 const PAPA = 'Papa';
@@ -35,6 +37,10 @@ const LOTTA = 'Lotta';
 const MO = 'Mo';
 const OMA = 'Oma Krümel';
 const CHOCOLATIER = 'Frau Kakao';
+const JANA = 'Kollegin Jana';
+const BEN = 'Kollege Ben';
+/** Papa's company. */
+const COMPANY = 'Pixelwerk';
 
 const FLAG = {
   metMama: 'pralines.metMama',
@@ -50,12 +56,12 @@ const CLUE = {
   tip: 'pralines.tip',
   paperCup: 'pralines.paperCup',
   orderBook: 'pralines.orderBook',
-  workbench: 'pralines.workbench',
+  desk: 'pralines.desk',
   confession: 'pralines.confession',
 } as const;
 
 /** Evidence the siblings need before Papa owns up. */
-const PAPA_EVIDENCE = [CLUE.paperCup, CLUE.orderBook, CLUE.workbench];
+const PAPA_EVIDENCE = [CLUE.paperCup, CLUE.orderBook, CLUE.desk];
 
 // --- People ------------------------------------------------------------------
 
@@ -75,12 +81,12 @@ const MAMA_LOOK: NpcLook = {
 };
 
 const PAPA_LOOK: NpcLook = {
-  hairColor: '#4a3426',
-  hairStyle: 'short',
-  beard: '#4a3426',
-  accent: '#c0392b',
+  // Very short and sparse
+  hairColor: '#5a4636',
+  hairStyle: 'sparse',
+  accent: '#34495e',
   skin: SKIN,
-  shirt: '#c0392b',
+  shirt: '#34495e',
   pants: '#36508f',
   shoes: '#5c361d',
   heightScale: 1.08,
@@ -141,6 +147,29 @@ const LOTTA_LOOK = kid({
   pants: '#7a4fa3',
   beard: CHOCOLATE_MOUTH,
 });
+const JANA_LOOK: NpcLook = {
+  hairColor: '#b03a2e',
+  hairStyle: 'long',
+  accent: '#16a085',
+  skin: SKIN,
+  shirt: '#16a085',
+  pants: '#2c3e50',
+  shoes: '#3b2f2f',
+  heightScale: 0.96,
+};
+
+const BEN_LOOK: NpcLook = {
+  hairColor: '#2c1b12',
+  hairStyle: 'short',
+  beard: '#2c1b12',
+  accent: '#f39c12',
+  skin: '#d9a77c',
+  shirt: '#f39c12',
+  pants: '#36508f',
+  shoes: '#222222',
+  heightScale: 1.04,
+};
+
 const MO_LOOK = kid({
   hairColor: '#f5dc86',
   shirt: '#27ae60',
@@ -357,7 +386,7 @@ const PLAYGROUND_SCENE: SceneDefinition = {
   background: '#4f8a45',
   tiles: TILESET,
   map: [
-    // Kindergarten, chocolate factory and workshop face the playground
+    // Kindergarten, chocolate factory and Papa's office face the playground
     'HHHddHHHHHHHddHHHHHHHddHHH',
     'f' + 'p'.repeat(24) + 'f',
     ...Array.from({ length: 11 }, () => PLAYGROUND_LAWN),
@@ -367,12 +396,12 @@ const PLAYGROUND_SCENE: SceneDefinition = {
     start: { x: 13, y: 12.2, facing: 'up' },
     kitaDoor: { x: 4, y: 2, facing: 'down' },
     factoryDoor: { x: 13, y: 2, facing: 'down' },
-    workshopDoor: { x: 22, y: 2, facing: 'down' },
+    officeDoor: { x: 22, y: 2, facing: 'down' },
   },
   exits: [
     { x: 3, y: 0, w: 2, h: 1, target: KITA, spawn: 'fromPlayground' },
     { x: 12, y: 0, w: 2, h: 1, target: FACTORY, spawn: 'fromPlayground' },
-    { x: 21, y: 0, w: 2, h: 1, target: WORKSHOP, spawn: 'fromPlayground' },
+    { x: 21, y: 0, w: 2, h: 1, target: OFFICE, spawn: 'fromPlayground' },
     { x: 12, y: 13, w: 2, h: 1, target: 'garden', spawn: 'gate' },
   ],
   objects: [
@@ -404,7 +433,7 @@ const PLAYGROUND_SCENE: SceneDefinition = {
       },
     },
     {
-      id: 'sign-workshop',
+      id: 'sign-office',
       label: 'Schild',
       sprite: 'sign',
       color: '#e0b981',
@@ -413,7 +442,7 @@ const PLAYGROUND_SCENE: SceneDefinition = {
       w: 1,
       h: 1,
       solid: true,
-      interaction: { kind: 'dialogue', lines: [{ text: '„Schreinerei am Spielplatz“' }] },
+      interaction: { kind: 'dialogue', lines: [{ text: `„${COMPANY} – Softwarebüro“` }] },
     },
     {
       id: 'slide',
@@ -617,9 +646,9 @@ const FACTORY_SCENE: SceneDefinition = {
   ],
 };
 
-const WORKSHOP_SCENE: SceneDefinition = {
-  id: WORKSHOP,
-  name: 'Papas Werkstatt',
+const OFFICE_SCENE: SceneDefinition = {
+  id: OFFICE,
+  name: 'Papas Büro',
   background: '#2a2233',
   tiles: TILESET,
   map: room(20, 11, 'o'),
@@ -627,18 +656,18 @@ const WORKSHOP_SCENE: SceneDefinition = {
     start: { x: 10, y: 9.2, facing: 'up' },
     fromPlayground: { x: 10, y: 9.2, facing: 'up' },
   },
-  exits: [{ x: 9, y: 10, w: 2, h: 1, target: PLAYGROUND, spawn: 'workshopDoor' }],
+  exits: [{ x: 9, y: 10, w: 2, h: 1, target: PLAYGROUND, spawn: 'officeDoor' }],
   objects: [
     {
-      id: 'workbench',
-      label: 'Hobelbank',
-      sprite: 'workbench',
-      x: 6,
+      id: 'papa-desk',
+      label: 'Papas Schreibtisch',
+      sprite: 'computerDeskCrumbs',
+      x: 5,
       y: 3,
-      w: 4,
+      w: 3,
       h: 1,
       solid: true,
-      interaction: { kind: 'event', eventId: 'inspectWorkbench' },
+      interaction: { kind: 'event', eventId: 'inspectDesk' },
     },
     {
       id: 'papa',
@@ -646,7 +675,7 @@ const WORKSHOP_SCENE: SceneDefinition = {
       sprite: 'person',
       npc: PAPA_LOOK,
       facing: 'left',
-      x: 11,
+      x: 8.3,
       y: 3,
       w: 1,
       h: 1,
@@ -655,8 +684,105 @@ const WORKSHOP_SCENE: SceneDefinition = {
       interaction: { kind: 'event', eventId: 'talkPapa' },
     },
     {
-      id: 'tool-shelf',
-      label: 'Werkzeugregal',
+      id: 'jana-desk',
+      label: 'Schreibtisch',
+      sprite: 'computerDesk',
+      color: '#a3c4bc',
+      x: 12,
+      y: 3,
+      w: 3,
+      h: 1,
+      solid: true,
+    },
+    {
+      id: 'jana',
+      label: JANA,
+      sprite: 'person',
+      npc: JANA_LOOK,
+      facing: 'left',
+      x: 15.3,
+      y: 3,
+      w: 1,
+      h: 1,
+      solid: true,
+      interaction: {
+        kind: 'dialogue',
+        lines: [
+          {
+            speaker: JANA,
+            text: 'Hallo! Ihr seid bestimmt die Detektiv-Kinder. Euer Papa erzählt ständig von euch.',
+          },
+          {
+            speaker: JANA,
+            text: 'Er arbeitet ja meistens von zu Hause. Aber wenn er hier ist, machen wir Mittagspause auf dem Spielplatz.',
+          },
+          {
+            speaker: JANA,
+            text: 'Mit Gebäck vom Bäcker! Heute gab es Croissants. Und Streuselschnecken.',
+          },
+          { speaker: 'nino', text: 'Schnecken? Igitt!' },
+          { speaker: JANA, text: 'Hihi, keine echten Schnecken. Süße!' },
+        ],
+      },
+    },
+    {
+      id: 'ben-desk',
+      label: 'Schreibtisch',
+      sprite: 'computerDesk',
+      color: '#c39bd3',
+      x: 12,
+      y: 7,
+      w: 3,
+      h: 1,
+      solid: true,
+    },
+    {
+      id: 'ben',
+      label: BEN,
+      sprite: 'person',
+      npc: BEN_LOOK,
+      facing: 'left',
+      x: 15.3,
+      y: 7,
+      w: 1,
+      h: 1,
+      solid: true,
+      interaction: {
+        kind: 'dialogue',
+        lines: [
+          { speaker: BEN, text: 'Hmm … wo steckt nur dieser Fehler im Programm …' },
+          {
+            speaker: BEN,
+            text: 'Oh, hallo! Ich suche Fehler. Ihr sucht Diebe. Dann sind wir ja quasi Kollegen!',
+          },
+          { speaker: 'maja', text: 'Haben Sie heute auch Pralinen gegessen?' },
+          {
+            speaker: BEN,
+            text: 'Pralinen? Nein, nur drei Croissants. Oder vier. Auf dem Spielplatz krümelt man immer so.',
+          },
+        ],
+      },
+    },
+    {
+      id: 'bakery-bag',
+      label: 'Bäckertüte',
+      sprite: 'table',
+      x: 2,
+      y: 7,
+      w: 3,
+      h: 1.5,
+      solid: true,
+      interaction: {
+        kind: 'dialogue',
+        lines: [
+          { text: 'Auf dem Tisch liegt eine leere Bäckertüte. Drinnen: nur noch Krümel.' },
+          { speaker: 'nino', text: 'Krümel! Wie auf der Rutsche!' },
+        ],
+      },
+    },
+    {
+      id: 'book-shelf',
+      label: 'Bücherregal',
       sprite: 'shelf',
       x: 1,
       y: 1,
@@ -665,71 +791,13 @@ const WORKSHOP_SCENE: SceneDefinition = {
       solid: true,
       interaction: {
         kind: 'dialogue',
-        lines: [{ text: 'Hammer, Sägen, Zwingen und ganz viele Schrauben in Gläsern.' }],
-      },
-    },
-    {
-      id: 'toy-chest',
-      label: 'Halb fertige Spielzeugkiste',
-      sprite: 'chest',
-      color: '#d9b382',
-      x: 14,
-      y: 6,
-      w: 2,
-      h: 1,
-      solid: true,
-      interaction: {
-        kind: 'dialogue',
         lines: [
-          { text: 'Eine halb fertige Spielzeugkiste. Auf dem Deckel ist ein N eingeschnitzt.' },
-          { speaker: 'nino', text: 'N wie NINO!' },
+          { text: 'Dicke Bücher: „Programmieren für Anfänger“, „Programmieren für Profis“ …' },
+          { text: '… und „Programmieren für müde Papas“.' },
         ],
       },
     },
-    {
-      id: 'sawdust-barrel',
-      label: 'Sägespäne-Fass',
-      sprite: 'barrel',
-      x: 16,
-      y: 1,
-      w: 1,
-      h: 1,
-      solid: true,
-      interaction: {
-        kind: 'dialogue',
-        lines: [{ text: 'Ein Fass voller Sägespäne. Es riecht nach Wald.' }],
-      },
-    },
-    {
-      id: 'planks',
-      label: 'Bretter',
-      sprite: 'box',
-      color: '#c19a69',
-      x: 17,
-      y: 7,
-      w: 1,
-      h: 1,
-      solid: true,
-    },
-    {
-      id: 'jacket',
-      label: 'Papas Jacke',
-      sprite: 'coatRack',
-      x: 1,
-      y: 8,
-      w: 1,
-      h: 1,
-      solid: true,
-      interaction: {
-        kind: 'dialogue',
-        lines: [
-          {
-            speaker: ACTIVE_SPEAKER,
-            text: 'In der Jackentasche knistert etwas … nur ein Bonbonpapier. Kein Beweis.',
-          },
-        ],
-      },
-    },
+    { id: 'plant', label: 'Pflanze', sprite: 'plant', x: 18, y: 1, w: 1, h: 1, solid: true },
   ],
 };
 
@@ -838,7 +906,7 @@ function mamaHint(state: GameStateService): DialogueLine[] {
   return [
     {
       speaker: MAMA,
-      text: 'Papa arbeitet heute in seiner Werkstatt am Spielplatz. Vielleicht kann er euch helfen?',
+      text: 'Papa arbeitet heute ausnahmsweise nicht zu Hause, sondern im Büro am Spielplatz. Vielleicht kann er euch helfen?',
     },
   ];
 }
@@ -1113,12 +1181,12 @@ function inspectSlide(ctx: CaseEventContext): void {
         speaker: 'maja',
         text: 'Hab’s! Ein goldenes Papierförmchen! Genau wie in Mamas Schachtel!',
       },
-      { speaker: 'maja', text: 'Und da kleben kleine Holzkrümel dran. Sägespäne!' },
+      { speaker: 'maja', text: 'Und da kleben Krümel dran. Kuchenkrümel! Oder … Croissantkrümel?' },
       { speaker: 'maja', text: 'Wiiiiiiiiii!' },
       { text: 'Maja saust die Rutsche hinunter und landet direkt vor ihren Geschwistern.' },
       {
         speaker: 'leah',
-        text: 'Ein Pralinen-Förmchen mit Sägespänen … Wer hat denn Sägespäne an den Fingern?',
+        text: 'Ein Pralinen-Förmchen mit Gebäckkrümeln … Wer isst denn auf dem Spielplatz Pralinen UND Kuchen?',
       },
     ],
     () => state.addClue(CLUE.paperCup),
@@ -1137,6 +1205,10 @@ function talkOma(ctx: CaseEventContext): void {
       {
         speaker: OMA,
         text: 'Gleich da oben, die mittlere Tür. Frau Kakao weiß alles über ihre Pralinen.',
+      },
+      {
+        speaker: OMA,
+        text: 'Und die Krümel? Die sind bestimmt von den Büroleuten. Die picknicken hier mittags immer mit Gebäck.',
       },
     ]);
     return;
@@ -1157,7 +1229,11 @@ function talkOma(ctx: CaseEventContext): void {
     },
     {
       speaker: OMA,
-      text: 'Heute Mittag war hier ein großer Mann. Der ist gerutscht wie ein kleines Kind. Hihi!',
+      text: 'Mittags kommen immer die Leute aus dem Büro da drüben und essen hier Gebäck. Krümel für meine Tauben!',
+    },
+    {
+      speaker: OMA,
+      text: 'Und heute ist einer von denen sogar gerutscht. Wie ein kleines Kind! Hihi!',
     },
     { speaker: 'maja', text: 'Ein großer Mann auf der Rutsche? Merkwürdig …' },
   ]);
@@ -1211,9 +1287,7 @@ function talkChocolatier(ctx: CaseEventContext): void {
 function inspectOrderBook(ctx: CaseEventContext): void {
   const { state } = ctx;
   if (state.hasClue(CLUE.orderBook)) {
-    ctx.say([
-      { text: 'Das Bestellbuch: zweimal Herzpralinen für die „Schreinerei am Spielplatz“.' },
-    ]);
+    ctx.say([{ text: `Das Bestellbuch: zweimal Herzpralinen für „${COMPANY} – Softwarebüro“.` }]);
     return;
   }
   if (!state.hasClue(CLUE.paperCup)) {
@@ -1243,37 +1317,50 @@ function inspectOrderBook(ctx: CaseEventContext): void {
     [
       {
         speaker: 'leah',
-        text: 'Hier steht: „Herzpralinen, große Schachtel. Abgeholt von: Schreinerei am Spielplatz.“',
+        text: `Hier steht: „Herzpralinen, große Schachtel. Abgeholt von: ${COMPANY} – Softwarebüro.“`,
       },
-      { speaker: 'maja', text: 'Schreinerei am Spielplatz? Das ist doch PAPAS Werkstatt!' },
+      {
+        speaker: 'maja',
+        text: `${COMPANY}? Da arbeitet doch Papa, wenn er nicht zu Hause arbeitet! Das Büro ist direkt am Spielplatz!`,
+      },
       { speaker: 'nino', text: 'Papa!' },
       {
         speaker: 'leah',
-        text: 'Und hier, von heute Morgen: noch eine große Schachtel. Wieder für die Schreinerei.',
+        text: `Und hier, von heute Morgen: noch eine große Schachtel. Wieder für ${COMPANY}.`,
       },
       { speaker: 'maja', text: 'Zwei Schachteln? Komisch …' },
-      { speaker: 'leah', text: 'Sägespäne, Schreinerei … Wir müssen dringend mit Papa reden!' },
+      {
+        speaker: 'leah',
+        text: 'Gebäckkrümel, Büro am Spielplatz … Wir müssen dringend mit Papa reden!',
+      },
     ],
     () => state.addClue(CLUE.orderBook),
   );
 }
 
-function inspectWorkbench(ctx: CaseEventContext): void {
+function inspectDesk(ctx: CaseEventContext): void {
   const { state } = ctx;
-  if (state.hasClue(CLUE.workbench)) {
+  if (state.hasClue(CLUE.desk)) {
     ctx.say([
-      { text: 'Papas Hobelbank. Die goldenen Förmchen liegen immer noch zwischen den Sägespänen.' },
+      { text: 'Papas Schreibtisch. Die goldenen Förmchen liegen immer noch zwischen den Krümeln.' },
     ]);
     return;
   }
   ctx.say(
     [
-      { text: 'Papas Hobelbank, voller Sägespäne, Werkzeug und Holzbretter.' },
-      { speaker: 'maja', text: 'Da! Zwischen den Sägespänen! Goldene Förmchen!' },
+      {
+        text: 'Papas Schreibtisch: ein Bildschirm voller bunter Buchstaben, eine Tastatur, eine Kaffeetasse.',
+      },
+      { text: 'Am Bildschirmrand klebt ein Bild, das Nino gemalt hat.' },
+      { speaker: 'nino', text: 'Mein Bild!' },
+      { speaker: 'maja', text: 'Und überall Krümel! Und da, dazwischen: goldene Förmchen!' },
       { speaker: 'nino', text: 'Eins, zwei, drei!' },
-      { speaker: 'leah', text: 'Genau solche Förmchen wie das auf der Rutsche …' },
+      {
+        speaker: 'leah',
+        text: 'Genau solche Förmchen wie das auf der Rutsche. Und dieselben Krümel …',
+      },
     ],
-    () => state.addClue(CLUE.workbench),
+    () => state.addClue(CLUE.desk),
   );
 }
 
@@ -1285,6 +1372,10 @@ function talkPapa(ctx: CaseEventContext): void {
       {
         speaker: PAPA,
         text: 'Na, meine Meisterdetektive? Eine Praline für jeden – Mama hat’s erlaubt.',
+      },
+      {
+        speaker: PAPA,
+        text: 'Ab morgen arbeite ich wieder hier zu Hause. Direkt neben der Pralinenschachtel. Nur zum Aufpassen, natürlich.',
       },
       { speaker: 'nino', text: 'Mjam!' },
     ]);
@@ -1303,16 +1394,21 @@ function talkPapa(ctx: CaseEventContext): void {
   const found = PAPA_EVIDENCE.filter((c) => state.hasClue(c)).length;
   if (found < PAPA_EVIDENCE.length) {
     const intro: DialogueLine[] = state.flag(FLAG.metPapa)
-      ? [{ speaker: PAPA, text: 'Ihr schon wieder? Ich muss weiterhobeln. Hobel, hobel!' }]
+      ? [
+          {
+            speaker: PAPA,
+            text: 'Ihr schon wieder? Ich muss weiterprogrammieren. Tipp, tipp, tipp!',
+          },
+        ]
       : [
           {
             speaker: PAPA,
-            text: 'Hallo, meine Detektive! Was macht ihr denn in meiner Werkstatt?',
+            text: 'Hallo, meine Detektive! Was macht ihr denn hier im Büro?',
           },
           { speaker: 'leah', text: 'Wir ermitteln, Papa. Mamas Pralinen sind verschwunden!' },
           {
             speaker: PAPA,
-            text: 'Verschwunden? Oh. Ähm. Das ist ja … schlimm. Ganz schlimm. Ich muss dann mal weiterhobeln!',
+            text: 'Verschwunden? Oh. Ähm. Das ist ja … schlimm. Ganz schlimm. Ich muss dann mal weiterprogrammieren!',
           },
         ];
     ctx.say(
@@ -1333,22 +1429,26 @@ function talkPapa(ctx: CaseEventContext): void {
       { speaker: 'leah', text: 'Papa, wir müssen mit dir reden. Als Detektive.' },
       {
         speaker: 'maja',
-        text: 'Oben auf der Rutsche lag ein goldenes Pralinen-Förmchen. Mit Sägespänen dran!',
+        text: 'Oben auf der Rutsche lag ein goldenes Pralinen-Förmchen. Mit Gebäckkrümeln dran!',
       },
       {
         speaker: 'leah',
-        text: 'Und im Bestellbuch der Schokoladenfabrik steht: Die Herzpralinen hat die Schreinerei am Spielplatz gekauft.',
+        text: `Und im Bestellbuch der Schokoladenfabrik steht: Die Herzpralinen hat ${COMPANY} gekauft. Also DU.`,
       },
-      { speaker: 'nino', text: 'Und da liegen Förmchen! Eins, zwei, drei!' },
+      { speaker: 'nino', text: 'Und auf deinem Tisch liegen Förmchen! Eins, zwei, drei!' },
       { speaker: PAPA, text: 'Ähm … oh. Ihr seid wirklich gute Detektive.' },
       {
         speaker: PAPA,
-        text: 'Na gut, ich geb’s zu: Ich habe heute Morgen ein paar Pralinen für die Mittagspause mitgenommen.',
+        text: 'Na gut, ich geb’s zu: Ich habe heute Morgen ein paar Pralinen für unser Mittagspicknick mitgenommen.',
+      },
+      {
+        speaker: PAPA,
+        text: 'Croissant und Praline zusammen – das ist das Allerbeste!',
       },
       { speaker: PAPA, text: 'Zwei. Oder drei. Aber ehrlich – nicht mehr!' },
       {
         speaker: PAPA,
-        text: 'Und dann bin ich auf dem Spielplatz gerutscht. Das macht man so in der Mittagspause.',
+        text: 'Und dann bin ich gerutscht. Jana hat gesagt, das traue ich mich nicht. Hab ich aber!',
       },
       { speaker: 'maja', text: 'Aber Mama sagt, es waren noch GANZ viele drin!' },
       {
@@ -1378,7 +1478,7 @@ export const LOST_PRALINES_CASE: CaseDefinition = {
     'Dabei waren doch noch so viele übrig! Mama wartet im Wohnzimmer auf ihre Detektive.',
   firstSceneId: KITA,
   requires: [PIRATE_TREASURE_CASE.id],
-  scenes: [KITA_SCENE, PLAYGROUND_SCENE, FACTORY_SCENE, WORKSHOP_SCENE],
+  scenes: [KITA_SCENE, PLAYGROUND_SCENE, FACTORY_SCENE, OFFICE_SCENE],
   extraObjects: { house: HOUSE_OBJECTS },
   clues: [
     {
@@ -1407,20 +1507,20 @@ export const LOST_PRALINES_CASE: CaseDefinition = {
     },
     {
       id: CLUE.paperCup,
-      title: 'Förmchen mit Sägespänen',
+      title: 'Förmchen mit Krümeln',
       description:
-        'Maja hat oben auf der Rutsche ein goldenes Pralinen-Förmchen gefunden. Daran kleben Sägespäne.',
+        'Maja hat oben auf der Rutsche ein goldenes Pralinen-Förmchen gefunden. Daran kleben Gebäckkrümel – die Büroleute vom Spielplatz picknicken mittags mit Gebäck.',
     },
     {
       id: CLUE.orderBook,
       title: 'Das Bestellbuch',
-      description:
-        'Die Herzpralinen hat die „Schreinerei am Spielplatz“ gekauft – Papas Werkstatt! Und heute Morgen noch eine Schachtel.',
+      description: `Die Herzpralinen hat „${COMPANY}“ gekauft – Papas Büro am Spielplatz! Und heute Morgen noch eine Schachtel.`,
     },
     {
-      id: CLUE.workbench,
-      title: 'Förmchen auf der Hobelbank',
-      description: 'Drei goldene Förmchen zwischen den Sägespänen auf Papas Hobelbank.',
+      id: CLUE.desk,
+      title: 'Förmchen auf Papas Schreibtisch',
+      description:
+        'Drei goldene Förmchen zwischen lauter Gebäckkrümeln auf Papas Schreibtisch im Büro.',
     },
     {
       id: CLUE.confession,
@@ -1438,7 +1538,7 @@ export const LOST_PRALINES_CASE: CaseDefinition = {
     talkOma,
     talkChocolatier,
     inspectOrderBook,
-    inspectWorkbench,
+    inspectDesk,
     talkPapa,
   },
 };
