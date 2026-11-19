@@ -8,6 +8,7 @@ import {
   VIEW_WIDTH,
   WALK_SPEED,
 } from '../../core/config';
+import { CASES } from '../../core/data/cases';
 import { CHARACTERS, PARTY_ORDER } from '../../core/data/characters';
 import { CharacterDefinition, CharacterId, Facing } from '../../core/models/character.model';
 import { ACTIVE_SPEAKER, DialogueLine } from '../../core/models/dialogue.model';
@@ -302,7 +303,7 @@ export class GameEngine {
     const py = leader.y - 0.15 + v.y * 0.7;
     const margin = 0.1;
     const found =
-      this.scene.objects.find(
+      this.visibleObjects().find(
         (o) =>
           o.interaction &&
           px >= o.x - margin &&
@@ -332,7 +333,9 @@ export class GameEngine {
         break;
       }
       case 'event': {
-        const handler = this.state.activeCase()?.events?.[interaction.eventId];
+        // The active case first; otherwise the case this scene belongs to (e.g. after solving it)
+        const owner = CASES.find((c) => c.scenes.some((s) => s.id === this.scene.id));
+        const handler = this.state.activeCase()?.events?.[interaction.eventId] ?? owner?.events?.[interaction.eventId];
         if (handler) {
           handler({
             state: this.state,
@@ -383,7 +386,13 @@ export class GameEngine {
         if (!tile || tile.solid) return true;
       }
     }
-    return this.scene.objects.some((o) => o.solid && overlaps(o, box));
+    return this.visibleObjects().some((o) => o.solid && overlaps(o, box));
+  }
+
+  /** Scene objects whose `showIf` / `hideIf` flags currently let them appear. */
+  private visibleObjects(): SceneObject[] {
+    const flags = this.state.flags();
+    return this.scene.objects.filter((o) => (!o.showIf || !!flags[o.showIf]) && (!o.hideIf || !flags[o.hideIf]));
   }
 
   // --- Rendering ----------------------------------------------------------------------
@@ -410,11 +419,12 @@ export class GameEngine {
       Math.ceil((camY + VIEW_HEIGHT) / T),
     );
 
-    for (const obj of scene.objects) if (FLAT_SPRITES.has(obj.sprite)) drawObject(ctx, obj);
+    const objects = this.visibleObjects();
+    for (const obj of objects) if (FLAT_SPRITES.has(obj.sprite)) drawObject(ctx, obj);
 
     // Depth-sort everything else by its bottom edge
     const drawables: { depth: number; draw: () => void }[] = [];
-    for (const obj of scene.objects) {
+    for (const obj of objects) {
       if (!FLAT_SPRITES.has(obj.sprite)) drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, obj) });
     }
     for (const actor of this.actors.values()) {

@@ -16,4 +16,9 @@ export const TILESET: Record<string, TileDefinition> = {
   f: { solid: true, pattern: 'fence', base: '#7cc06a', detail: '#f4f1e6' },
   H: { solid: true, pattern: 'brick', base: '#b5654a', detail: '#94503a' },
   d: { solid: false, pattern: 'door', base: '#7a4b2a', detail: '#5c361d' },
+  // Museum & harbour
+  m: { solid: false, pattern: 'checker', base: '#e9dfc9', detail: '#d6c8a8' },
+  c: { solid: false, pattern: 'path', base: '#b9b4ab', detail: '#8f8a80' },
+  '=': { solid: false, pattern: 'wood', base: '#a87a4a', detail: '#7f5a33' },
+  w: { solid: true, pattern: 'water', base: '#3f8fc9', detail: '#8cc7ee' },
 };

@@ -1,9 +1,14 @@
 import { TILE_SIZE as T } from '../../core/config';
-import { ObjectSprite, SceneObject } from '../../core/models/scene.model';
+import { Facing } from '../../core/models/character.model';
+import { NpcLook, ObjectSprite, SceneObject } from '../../core/models/scene.model';
+import { characterMetrics, drawCharacter } from './character-sprite';
 import { circle, ellipse, rect, roundRect, shade } from './draw-utils';
 
 /** Sprites that lie flat on the floor and are drawn below everything else. */
-export const FLAT_SPRITES: ReadonlySet<ObjectSprite> = new Set(['rug']);
+export const FLAT_SPRITES: ReadonlySet<ObjectSprite> = new Set(['rug', 'feather']);
+
+/** Grown-ups are drawn a bit bigger than the siblings. */
+const NPC_SCALE = 1.2;
 
 /**
  * Draws a furniture/prop placeholder. Everything is procedural so the game
@@ -186,6 +191,137 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject): voi
       circle(ctx, x + w - 22, y + h - 20, 6, '#e74c3c');
       rect(ctx, x + 18, y + 18, 3, 12, '#2e86c1');
       break;
+    case 'person':
+      if (obj.npc) drawPerson(ctx, obj.npc, x + w / 2, y + h - 3, obj.facing ?? 'down');
+      break;
+    case 'pedestal':
+    case 'pedestalWithChest': {
+      rect(ctx, x + 6, y + h - 8, w - 12, 6, '#b3a993');
+      rect(ctx, x + 12, y - 2, w - 24, h - 6, '#cfc6b4');
+      rect(ctx, x + 16, y - 2, 3, h - 6, '#e2dacb');
+      rect(ctx, x + 6, y - 9, w - 12, 8, '#ddd5c4');
+      rect(ctx, x + w / 2 - 8, y + 6, 16, 6, '#c9a227');
+      if (obj.sprite === 'pedestalWithChest') {
+        drawTreasureChest(ctx, x + w / 2, y - 7);
+      } else {
+        // Dust outline where the chest used to stand
+        ctx.strokeStyle = 'rgba(120, 100, 70, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 2]);
+        ctx.strokeRect(x + 17.5, y - 7.5, w - 35, 5);
+        ctx.setLineDash([]);
+      }
+      break;
+    }
+    case 'display': {
+      const c = color ?? '#95a5a6';
+      rect(ctx, x + 4, y + 10, w - 8, h - 12, '#7a4b2a');
+      rect(ctx, x + 4, y + 10, w - 8, 3, '#9c6b3c');
+      roundRect(ctx, x + w / 2 - 10, y + 1, 20, 8, 2, c);
+      ctx.fillStyle = 'rgba(190, 225, 245, 0.4)';
+      ctx.fillRect(x + 6, y - 14, w - 12, 24);
+      ctx.strokeStyle = '#6d8796';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 6.5, y - 13.5, w - 13, 23);
+      rect(ctx, x + 10, y - 11, 2, 14, 'rgba(255, 255, 255, 0.6)');
+      break;
+    }
+    case 'window': {
+      const inner = h - 12;
+      rect(ctx, x + 4, y + 2, w - 8, h - 6, '#7a4b2a');
+      rect(ctx, x + 7, y + 5, w - 14, inner, '#9fd3f2');
+      rect(ctx, x + 7, y + 5 + inner * 0.6, w - 14, inner * 0.4, '#3f8fc9');
+      // The left sash is swung open
+      ctx.fillStyle = 'rgba(225, 240, 250, 0.75)';
+      ctx.fillRect(x + 1, y + 4, 8, inner + 2);
+      break;
+    }
+    case 'painting': {
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      rect(ctx, x + 10, y + 1, w - 20, h - 4, '#c9a227');
+      rect(ctx, x + 13, y + 4, w - 26, h - 10, '#2c3e50');
+      circle(ctx, cx, cy, 6, '#f6d2b5');
+      ellipse(ctx, cx, cy + 5, 6, 3.5, '#c0392b');
+      rect(ctx, cx - 10, cy - 9, 20, 4, '#141414');
+      rect(ctx, cx - 5, cy - 12, 10, 4, '#141414');
+      rect(ctx, cx - 4, cy - 2, 3, 3, '#141414');
+      break;
+    }
+    case 'feather': {
+      ctx.save();
+      ctx.translate(x + w / 2, y + h / 2);
+      ctx.rotate(-0.6);
+      rect(ctx, -13, -0.5, 6, 1, '#6b6b6b');
+      ellipse(ctx, 0, 0, 9, 3, '#3fae49');
+      ellipse(ctx, 7, 0, 3, 2.5, '#f2d03b');
+      ctx.restore();
+      break;
+    }
+    case 'parrot': {
+      const cx = x + w / 2;
+      rect(ctx, cx - 8, y + h - 4, 16, 3, '#5c361d');
+      rect(ctx, cx - 2, y + 4, 4, h - 6, '#5c361d');
+      rect(ctx, cx - 2, y - 2, 4, 10, '#c0392b');
+      rect(ctx, cx - 10, y + 2, 20, 3, '#7a4b2a');
+      ellipse(ctx, cx, y - 6, 6, 9, '#3fae49');
+      ellipse(ctx, cx - 2, y - 4, 3, 6, '#2e8b3a');
+      circle(ctx, cx, y - 16, 5, '#f2d03b');
+      circle(ctx, cx + 2, y - 17, 1.2, '#222222');
+      ctx.fillStyle = '#e67e22';
+      ctx.beginPath();
+      ctx.moveTo(cx + 4, y - 17);
+      ctx.lineTo(cx + 9, y - 14);
+      ctx.lineTo(cx + 4, y - 12);
+      ctx.fill();
+      break;
+    }
+    case 'boat': {
+      const c = color ?? '#c0392b';
+      const deck = y + h * 0.35;
+      const mastX = x + w * 0.35;
+      rect(ctx, mastX, y - 40, 4, deck - y + 40, '#5c361d');
+      ctx.fillStyle = '#f4f1e6';
+      ctx.beginPath();
+      ctx.moveTo(mastX + 4, y - 38);
+      ctx.lineTo(mastX + 4, deck - 4);
+      ctx.lineTo(x + w * 0.78, deck - 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(x, deck);
+      ctx.lineTo(x + w, deck);
+      ctx.lineTo(x + w - 14, y + h - 4);
+      ctx.lineTo(x + 14, y + h - 4);
+      ctx.closePath();
+      ctx.fill();
+      rect(ctx, x + 2, deck, w - 4, 4, shade(c, -0.2));
+      // Tarp with something square underneath
+      roundRect(ctx, x + w * 0.55, deck - 14, 34, 16, 6, '#5d7a8c');
+      rect(ctx, x + w * 0.55 + 27, deck - 4, 6, 4, '#c9a227');
+      ctx.fillStyle = '#f4f1e6';
+      ctx.font = 'bold 9px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SEESCHNECKE', x + w / 2, y + h * 0.68);
+      break;
+    }
+    case 'boots':
+      ellipse(ctx, x + w / 2, y + h - 4, 14, 4, '#e3cf9b');
+      for (const bx of [x + 5, x + 17]) {
+        roundRect(ctx, bx, y - 2, 9, 22, 2, '#f1c40f');
+        roundRect(ctx, bx, y + 14, 12, 8, 3, '#f1c40f');
+        rect(ctx, bx, y - 2, 9, 3, '#d4ac0d');
+        circle(ctx, bx + 4, y + 19, 1.5, '#e3cf9b');
+      }
+      break;
+    case 'barrel':
+      roundRect(ctx, x + 6, y - 6, w - 12, h + 2, 6, '#8b5a2b');
+      rect(ctx, x + 6, y, w - 12, 2, '#3d3d3d');
+      rect(ctx, x + 6, y + h - 10, w - 12, 2, '#3d3d3d');
+      ellipse(ctx, x + w / 2, y - 5, (w - 12) / 2, 3, '#a0703d');
+      break;
     case 'box':
     default: {
       const c = color ?? '#95a5a6';
@@ -211,4 +347,53 @@ export function drawFocusMarker(ctx: CanvasRenderingContext2D, obj: SceneObject,
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('E', cx, cy);
+}
+
+/** A pirate chest standing on `bottomY`, centred on `cx`. */
+function drawTreasureChest(ctx: CanvasRenderingContext2D, cx: number, bottomY: number): void {
+  const w = 30;
+  const h = 20;
+  const x = cx - w / 2;
+  const y = bottomY - h;
+  circle(ctx, x + 6, y - 1, 3, '#f2d03b');
+  circle(ctx, x + w - 8, y - 2, 3, '#f7dc6f');
+  roundRect(ctx, x, y + 6, w, h - 6, 2, '#8b5a2b');
+  roundRect(ctx, x, y, w, 9, 4, '#a0703d');
+  rect(ctx, x, y + 8, w, 2, '#5c361d');
+  rect(ctx, x + 5, y, 3, h, '#c9a227');
+  rect(ctx, x + w - 8, y, 3, h, '#c9a227');
+  rect(ctx, cx - 3, y + 7, 6, 6, '#f2d03b');
+}
+
+/** A grown-up NPC: a scaled-up character plus optional hat and beard. */
+function drawPerson(ctx: CanvasRenderingContext2D, look: NpcLook, fx: number, fy: number, facing: Facing): void {
+  drawCharacter(ctx, look, fx, fy, facing, 0, NPC_SCALE);
+  const { height, headRadius: r } = characterMetrics(look, NPC_SCALE);
+  const hx = fx;
+  const hy = fy - height + r;
+  if (look.beard && facing !== 'up') {
+    const bx = facing === 'left' ? hx - r * 0.3 : facing === 'right' ? hx + r * 0.3 : hx;
+    ellipse(ctx, bx, hy + r * 0.72, r * 0.72, r * 0.42, look.beard);
+    ellipse(ctx, bx, hy + r * 0.4, r * 0.42, r * 0.12, look.beard);
+  }
+  switch (look.hat) {
+    case 'captain':
+      roundRect(ctx, hx - r * 1.05, hy - r * 1.35, r * 2.1, r * 0.75, r * 0.25, '#1f2a44');
+      rect(ctx, hx - r * 1.05, hy - r * 0.8, r * 2.1, r * 0.14, '#f4f1e6');
+      rect(ctx, hx - r * 1.2, hy - r * 0.66, r * 2.4, r * 0.2, '#141b2e');
+      circle(ctx, hx, hy - r * 1.02, r * 0.15, '#f2d03b');
+      break;
+    case 'guard':
+      roundRect(ctx, hx - r, hy - r * 1.3, r * 2, r * 0.65, r * 0.2, '#2c3e70');
+      rect(ctx, hx - r * 1.1, hy - r * 0.7, r * 2.2, r * 0.18, '#1b2650');
+      circle(ctx, hx, hy - r, r * 0.13, '#f2d03b');
+      break;
+    case 'beret':
+      ellipse(ctx, hx + r * 0.2, hy - r * 0.95, r, r * 0.35, '#c0392b');
+      circle(ctx, hx + r * 0.2, hy - r * 1.32, r * 0.12, '#c0392b');
+      break;
+    case 'bun':
+      circle(ctx, hx, hy - r * 1.15, r * 0.45, look.hairColor);
+      break;
+  }
 }

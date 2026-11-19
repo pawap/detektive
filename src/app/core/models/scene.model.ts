@@ -1,4 +1,4 @@
-import { Facing } from './character.model';
+import { CharacterAppearance, Facing } from './character.model';
 import { DialogueLine } from './dialogue.model';
 
 export type TilePattern =
@@ -8,6 +8,7 @@ export type TilePattern =
   | 'carpet'
   | 'grass'
   | 'path'
+  | 'water'
   | 'wall'
   | 'brick'
   | 'fence'
@@ -59,7 +60,24 @@ export type ObjectSprite =
   | 'gate'
   | 'flowers'
   | 'sandbox'
-  | 'box';
+  | 'box'
+  | 'person'
+  | 'pedestal'
+  | 'pedestalWithChest'
+  | 'display'
+  | 'window'
+  | 'painting'
+  | 'feather'
+  | 'parrot'
+  | 'boat'
+  | 'boots'
+  | 'barrel';
+
+/** Look of a non-player character drawn with the `person` sprite. */
+export interface NpcLook extends CharacterAppearance {
+  hat?: 'captain' | 'guard' | 'beret' | 'bun';
+  beard?: string;
+}
 
 export interface SceneObject extends Rect {
   id: string;
@@ -68,7 +86,15 @@ export interface SceneObject extends Rect {
   solid: boolean;
   /** Optional main colour override for the sprite. */
   color?: string;
+  /** Required for the `person` sprite. */
+  npc?: NpcLook;
+  /** Which way a `person` looks (default: down). */
+  facing?: Facing;
   interaction?: Interaction;
+  /** Only present while this game-state flag is truthy. */
+  showIf?: string;
+  /** Removed from the scene once this game-state flag is truthy. */
+  hideIf?: string;
 }
 
 /** Walking into this zone switches to another scene. */

@@ -99,6 +99,14 @@ function drawTile(ctx: CanvasRenderingContext2D, scene: SceneDefinition, tile: T
       rect(ctx, px + 2, py, T - 4, T, detail);
       rect(ctx, px + 4, py + 2, T - 8, T - 2, base);
       break;
+    case 'water':
+      for (let i = 0; i < 2; i++) {
+        const wx = (rnd >> (i * 6)) % 22;
+        const wy = 6 + i * 14 + ((rnd >> (i * 6 + 3)) % 6);
+        rect(ctx, px + wx, py + wy, 6, 2, detail);
+        rect(ctx, px + wx + 6, py + wy - 1, 4, 2, detail);
+      }
+      break;
     case 'plain':
       break;
   }
