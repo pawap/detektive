@@ -15,12 +15,22 @@
     }
   </ul>
 
-  <div class="buttons">
-    @if (hasSave) {
-      <button type="button" class="btn primary" (click)="continueGame()">{{ text.continueGame }}</button>
-    }
-    <button type="button" class="btn" [class.primary]="!hasSave" (click)="newGame()">{{ text.newGame }}</button>
-  </div>
+  @if (confirmingNewGame()) {
+    <div class="confirm" role="alertdialog" aria-labelledby="confirm-text">
+      <p id="confirm-text">{{ text.overwriteSave }}</p>
+      <div class="buttons">
+        <button type="button" class="btn primary" (click)="newGame()">{{ text.confirmNewGame }}</button>
+        <button type="button" class="btn" (click)="confirmingNewGame.set(false)">{{ text.cancel }}</button>
+      </div>
+    </div>
+  } @else {
+    <div class="buttons">
+      @if (hasSave) {
+        <button type="button" class="btn primary" (click)="continueGame()">{{ text.continueGame }}</button>
+      }
+      <button type="button" class="btn" [class.primary]="!hasSave" (click)="newGame()">{{ text.newGame }}</button>
+    </div>
+  }
 
   <p class="controls">{{ text.controls }}</p>
 </main>

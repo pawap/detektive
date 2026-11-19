@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { CHARACTERS } from '../../core/data/characters';
 import { GameStateService } from '../../core/services/game-state.service';
@@ -19,8 +19,14 @@ export class TitleScreen {
   protected readonly text = TEXT;
   protected readonly characters = CHARACTERS;
   protected readonly hasSave = this.state.hasSave();
+  /** Asking before a new game replaces the existing save. */
+  protected readonly confirmingNewGame = signal(false);
 
   protected newGame(): void {
+    if (this.hasSave && !this.confirmingNewGame()) {
+      this.confirmingNewGame.set(true);
+      return;
+    }
     this.state.newGame();
     void this.router.navigate(['/game']);
   }

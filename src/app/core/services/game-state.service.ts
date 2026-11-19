@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HOME_SCENE_ID, SAVE_KEY } from '../config';
 import { findCase } from '../data/cases';
 import { isCharacterId } from '../data/characters';
@@ -16,7 +16,8 @@ export interface SaveData {
   version: 1;
   savedAt: string;
   sceneId: string;
-  position: PartyPosition;
+  /** null = the scene's default spawn. */
+  position: PartyPosition | null;
   activeCharacter: CharacterId;
   flags: Record<string, FlagValue>;
   inventory: string[];
@@ -25,9 +26,31 @@ export interface SaveData {
   solvedCases: string[];
 }
 
-/** The persistent progress of a playthrough. */
+const FACINGS: readonly Facing[] = ['up', 'down', 'left', 'right'];
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((v) => typeof v === 'string');
+
+const isFlagRecord = (value: unknown): value is Record<string, FlagValue> =>
+  typeof value === 'object' &&
+  value !== null &&
+  !Array.isArray(value) &&
+  Object.values(value).every((v) => ['boolean', 'number', 'string'].includes(typeof v));
+
+/**
+ * The persistent progress of a playthrough.
+ *
+ * While a game is in progress every change to the progress signals is written
+ * to localStorage automatically (plus the party position when the page is
+ * hidden or closed), so a reload or closed tab never loses progress.
+ */
 @Injectable({ providedIn: 'root' })
 export class GameStateService {
+  /** True once a game was started or loaded; autosave only runs while true. */
+  readonly inProgress = signal(false);
+  /** False when the last write to localStorage failed (e.g. storage blocked/full). */
+  readonly storageOk = signal(true);
+
   readonly sceneId = signal(HOME_SCENE_ID);
   /** Where the leader stands; null = the scene's default spawn. */
   readonly leaderPosition = signal<PartyPosition | null>(null);
@@ -40,6 +63,51 @@ export class GameStateService {
 
   readonly activeCase = computed(() => findCase(this.activeCaseId()));
 
+  /** Supplies the live party position while the world is running (set by the engine). */
+  private positionSource: (() => PartyPosition) | null = null;
+
+  constructor() {
+    // Autosave whenever progress changes.
+    effect(() => {
+      if (!this.inProgress()) return;
+      this.sceneId();
+      this.activeCharacter();
+      this.flags();
+      this.inventory();
+      this.clues();
+      this.activeCaseId();
+      this.solvedCases();
+      untracked(() => this.persist());
+    });
+
+    // Capture the current position when the tab is hidden, reloaded or closed.
+    if (typeof window !== 'undefined') {
+      const flush = () => {
+        if (this.inProgress()) this.persist();
+      };
+      const onVisibility = () => {
+        if (document.visibilityState === 'hidden') flush();
+      };
+      window.addEventListener('pagehide', flush);
+      document.addEventListener('visibilitychange', onVisibility);
+      inject(DestroyRef).onDestroy(() => {
+        window.removeEventListener('pagehide', flush);
+        document.removeEventListener('visibilitychange', onVisibility);
+      });
+    }
+  }
+
+  /** Restores the saved game (if any) at app start, so a reload continues where it left off. */
+  restore(): void {
+    this.load();
+  }
+
+  /** Lets the running engine report the live party position for saves; null to detach. */
+  trackPosition(source: (() => PartyPosition) | null): void {
+    this.positionSource = source;
+  }
+
+  /** Starts over and immediately replaces any previous save. */
   newGame(): void {
     this.sceneId.set(HOME_SCENE_ID);
     this.leaderPosition.set(null);
@@ -49,6 +117,8 @@ export class GameStateService {
     this.clues.set([]);
     this.activeCaseId.set(null);
     this.solvedCases.set([]);
+    this.inProgress.set(true);
+    this.persist();
   }
 
   // --- Flags, items, clues, cases -------------------------------------------
@@ -96,8 +166,14 @@ export class GameStateService {
     return this.readSave() !== null;
   }
 
-  save(position: PartyPosition): boolean {
-    this.leaderPosition.set(position);
+  /** Writes the current progress; uses the live position if the engine is running. */
+  persist(): boolean {
+    const position = this.positionSource?.() ?? this.leaderPosition();
+    if (position) this.leaderPosition.set(position);
+    return this.write(position);
+  }
+
+  private write(position: PartyPosition | null): boolean {
     const data: SaveData = {
       version: 1,
       savedAt: new Date().toISOString(),
@@ -112,8 +188,10 @@ export class GameStateService {
     };
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      this.storageOk.set(true);
       return true;
     } catch {
+      this.storageOk.set(false);
       return false;
     }
   }
@@ -129,6 +207,7 @@ export class GameStateService {
     this.clues.set(data.clues);
     this.activeCaseId.set(data.activeCaseId);
     this.solvedCases.set(data.solvedCases);
+    this.inProgress.set(true);
     return true;
   }
 
@@ -145,15 +224,22 @@ export class GameStateService {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return null;
       const data = JSON.parse(raw) as Partial<SaveData>;
+      const position = data.position;
+      const validPosition =
+        position === null ||
+        (typeof position?.x === 'number' &&
+          typeof position?.y === 'number' &&
+          FACINGS.includes(position.facing));
       const valid =
         data.version === 1 &&
         typeof data.sceneId === 'string' &&
-        typeof data.position?.x === 'number' &&
-        typeof data.position?.y === 'number' &&
+        validPosition &&
         isCharacterId(data.activeCharacter) &&
-        Array.isArray(data.inventory) &&
-        Array.isArray(data.clues) &&
-        Array.isArray(data.solvedCases);
+        isFlagRecord(data.flags) &&
+        isStringArray(data.inventory) &&
+        isStringArray(data.clues) &&
+        (data.activeCaseId === null || typeof data.activeCaseId === 'string') &&
+        isStringArray(data.solvedCases);
       return valid ? (data as SaveData) : null;
     } catch {
       return null;

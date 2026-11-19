@@ -97,6 +97,7 @@ export class GameEngine {
     this.ctx = canvas.getContext('2d');
     if (!this.ctx) return;
     this.input.enable();
+    this.state.trackPosition(() => this.leaderPosition());
     this.enterScene(this.state.sceneId(), this.state.leaderPosition() ?? DEFAULT_SPAWN);
     this.transition = { phase: 'in', t: 0 };
     this.lastTimestamp = performance.now();
@@ -104,6 +105,11 @@ export class GameEngine {
   }
 
   stop(): void {
+    if (this.ctx) {
+      // Leaving the game screen: keep the exact spot before detaching.
+      this.saveGame();
+      this.state.trackPosition(null);
+    }
     cancelAnimationFrame(this.frameHandle);
     this.ctx = null;
     this.input.disable();
@@ -139,7 +145,7 @@ export class GameEngine {
   }
 
   saveGame(): boolean {
-    return this.state.save(this.leaderPosition());
+    return this.state.persist();
   }
 
   /** Fade out and move the party to another scene. */
