@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HOME_SCENE_ID, SAVE_KEY } from '../config';
 import { findCase } from '../data/cases';
+import { CaseDefinition } from '../models/case.model';
 import { isCharacterId } from '../data/characters';
 import { CharacterId, Facing } from '../models/character.model';
 
@@ -25,6 +26,9 @@ export interface SaveData {
   activeCaseId: string | null;
   solvedCases: string[];
 }
+
+/** Condition prefix for "this case is solved" (see {@link GameStateService.isSet}). */
+export const SOLVED_PREFIX = 'solved:';
 
 const FACINGS: readonly Facing[] = ['up', 'down', 'left', 'right'];
 
@@ -131,6 +135,14 @@ export class GameStateService {
     this.flags.update((flags) => ({ ...flags, [key]: value }));
   }
 
+  /** True if a condition holds: `solved:<caseId>` checks a case, anything else is a flag. */
+  isSet(condition: string): boolean {
+    if (condition.startsWith(SOLVED_PREFIX)) {
+      return this.solvedCases().includes(condition.slice(SOLVED_PREFIX.length));
+    }
+    return !!this.flags()[condition];
+  }
+
   hasItem(id: string): boolean {
     return this.inventory().includes(id);
   }
@@ -151,8 +163,15 @@ export class GameStateService {
     if (!this.hasClue(id)) this.clues.update((clues) => [...clues, id]);
   }
 
+  /** A case is available once all the cases it requires are solved. */
+  isCaseUnlocked(caseDef: CaseDefinition): boolean {
+    return (caseDef.requires ?? []).every((id) => this.solvedCases().includes(id));
+  }
+
+  /** Makes a case active; ignored for unknown or still locked cases. */
   startCase(id: string): void {
-    this.activeCaseId.set(id);
+    const caseDef = findCase(id);
+    if (caseDef && this.isCaseUnlocked(caseDef)) this.activeCaseId.set(id);
   }
 
   solveCase(id: string): void {

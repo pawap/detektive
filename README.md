@@ -36,6 +36,9 @@ src/app/
       scenes/                 house (start) + garden
       cases/index.ts          case registry
       cases/pirate-treasure.case.ts   case 1: „Der Schatz von Käpt’n Klabauter“ (museum + harbour)
+      cases/lost-pralines.case.ts     case 2: „Der Fall der verlorenen Pralinen“ (unlocks after case 1;
+                                      kindergarten, playground, chocolate factory, Papa's workshop; Mama & Papa at home)
+      world.ts                all scenes, with the cases' `extraObjects` merged in
     services/
       game-state.service.ts   progress: scene, flags, items, clues, cases, save/load (localStorage)
       dialogue.service.ts     dialogue queue
@@ -66,7 +69,7 @@ Home scenes go into `BASE_SCENES`; case scenes go into the case's `scenes` array
 plus optional `hat` and `beard`) and an optional `facing`.
 
 **Objects that appear or disappear:** `showIf: 'some.flag'` / `hideIf: 'some.flag'` show or hide an object
-(drawing, collision and interaction) depending on a game-state flag.
+(drawing, collision and interaction) depending on a game-state flag. `'solved:<caseId>'` checks whether a case is solved.
 
 **An interaction:** give a `SceneObject` an `interaction`:
 
@@ -75,6 +78,7 @@ plus optional `hat` and `beard`) and an optional `facing`.
 - `{ kind: 'event', eventId: 'x' }`: runs `events.x(ctx)` of the active case, with access to the game state
   (`ctx.state.addClue(...)`, flags, items), dialogue (`ctx.say`) and scene changes (`ctx.goTo`).
   If no case is active (e.g. it is solved), the handler of the case that owns the current scene is used.
+  With `caseId` the handler always comes from that case.
 
 **A case:** add a `CaseDefinition` to `CASES`:
 
@@ -89,5 +93,11 @@ export const MY_CASE: CaseDefinition = {
   events: { inspectFootprint: (ctx) => { ctx.state.addClue('footprint'); ctx.say([...]); } },
 };
 ```
+
+Optional case fields:
+
+- `requires: ['other-case']`: the case stays locked on the case board until those cases are solved.
+- `extraObjects: { house: [...] }`: objects the case places in scenes it doesn't own (e.g. family members at home);
+  their `event` interactions run this case's handlers.
 
 The scene tests (`scenes.spec.ts`) check every registered scene: rectangular maps, known tiles, walkable spawns, valid exits.

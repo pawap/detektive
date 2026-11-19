@@ -322,6 +322,99 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject): voi
       rect(ctx, x + 6, y + h - 10, w - 12, 2, '#3d3d3d');
       ellipse(ctx, x + w / 2, y - 5, (w - 12) / 2, 3, '#a0703d');
       break;
+    case 'pralineBox':
+    case 'pralineBoxFull':
+      drawPralineBox(ctx, x + w / 2, y + 14, obj.sprite === 'pralineBoxFull');
+      break;
+    case 'slide': {
+      // Ladder on the left, platform at the top, chute down to the right
+      const c = color ?? '#e74c3c';
+      rect(ctx, x + 4, y - 22, 3, h + 18, '#7f8c8d');
+      rect(ctx, x + 15, y - 22, 3, h + 18, '#7f8c8d');
+      for (let ry = y - 16; ry < y + h - 6; ry += 8) rect(ctx, x + 4, ry, 14, 2, '#95a5a6');
+      rect(ctx, x + 2, y - 26, 22, 6, '#2e86c1');
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(x + 20, y - 24);
+      ctx.lineTo(x + 30, y - 24);
+      ctx.lineTo(x + w - 2, y + h - 10);
+      ctx.lineTo(x + w - 2, y + h - 2);
+      ctx.lineTo(x + w - 14, y + h - 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = shade(c, -0.25);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 22, y - 24);
+      ctx.lineTo(x + w - 12, y + h - 4);
+      ctx.stroke();
+      break;
+    }
+    case 'swing': {
+      rect(ctx, x + 2, y - 28, 4, h + 26, '#5c361d');
+      rect(ctx, x + w - 6, y - 28, 4, h + 26, '#5c361d');
+      rect(ctx, x, y - 30, w, 5, '#7a4b2a');
+      for (const [sx, c] of [
+        [x + w * 0.3, '#f1c40f'],
+        [x + w * 0.7, '#2e86c1'],
+      ] as const) {
+        rect(ctx, sx - 7, y - 25, 1, h + 6, '#3d3d3d');
+        rect(ctx, sx + 6, y - 25, 1, h + 6, '#3d3d3d');
+        rect(ctx, sx - 8, y + h - 20, 16, 4, c);
+      }
+      break;
+    }
+    case 'sign':
+      rect(ctx, x + w / 2 - 2, y + 6, 4, h - 6, '#5c361d');
+      roundRect(ctx, x + 1, y - 8, w - 2, 16, 3, color ?? '#f4f1e6');
+      ctx.strokeStyle = '#5c361d';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x + 1.5, y - 7.5, w - 3, 15);
+      rect(ctx, x + 6, y - 3, w - 12, 2, '#5c361d');
+      rect(ctx, x + 6, y + 1, w - 16, 2, '#5c361d');
+      break;
+    case 'chocolateVat': {
+      // A big copper kettle full of melted chocolate, with a stirring paddle
+      ellipse(ctx, x + w / 2, y + h - 3, w / 2 - 2, 5, 'rgba(0,0,0,0.2)');
+      roundRect(ctx, x + 4, y - 4, w - 8, h, 10, '#b87333');
+      rect(ctx, x + 4, y + 6, w - 8, 3, '#8e5a28');
+      ellipse(ctx, x + w / 2, y - 4, w / 2 - 4, 8, '#8e5a28');
+      ellipse(ctx, x + w / 2, y - 3, w / 2 - 8, 6, '#5a3220');
+      ellipse(ctx, x + w / 2 - 6, y - 4, 6, 2, '#7b4a2e');
+      rect(ctx, x + w / 2 + 6, y - 26, 4, 24, '#a0703d');
+      break;
+    }
+    case 'conveyor': {
+      rect(ctx, x + 4, y + 10, 4, h - 10, '#7f8c8d');
+      rect(ctx, x + w - 8, y + 10, 4, h - 10, '#7f8c8d');
+      roundRect(ctx, x, y + 2, w, 10, 5, '#3d3d3d');
+      for (let px = x + 10; px < x + w - 8; px += 16) {
+        circle(ctx, px, y + 2, 4.5, '#d4ac0d');
+        circle(ctx, px, y + 0.5, 3.5, '#6b3e26');
+      }
+      break;
+    }
+    case 'workbench': {
+      rect(ctx, x + 4, y + 10, 5, h - 10, '#7a4b2a');
+      rect(ctx, x + w - 9, y + 10, 5, h - 10, '#7a4b2a');
+      rect(ctx, x + 2, y + 2, w - 4, 10, '#c19a69');
+      rect(ctx, x + 2, y + 10, w - 4, 3, '#a0703d');
+      // Sawdust, a saw, a plank and a few golden praline cups
+      ellipse(ctx, x + w * 0.3, y + 6, 10, 3, '#f0d9a0');
+      ellipse(ctx, x + w * 0.62, y + 7, 8, 2.5, '#f0d9a0');
+      rect(ctx, x + 8, y - 2, 30, 5, '#e0b981');
+      ctx.fillStyle = '#bdc3c7';
+      ctx.beginPath();
+      ctx.moveTo(x + w - 40, y + 4);
+      ctx.lineTo(x + w - 18, y + 4);
+      ctx.lineTo(x + w - 18, y - 2);
+      ctx.closePath();
+      ctx.fill();
+      rect(ctx, x + w - 18, y - 3, 7, 7, '#c0392b');
+      for (const cx of [x + w * 0.45, x + w * 0.5, x + w * 0.55])
+        circle(ctx, cx, y + 6, 2.5, '#d4ac0d');
+      break;
+    }
     case 'box':
     default: {
       const c = color ?? '#95a5a6';
@@ -365,6 +458,36 @@ function drawTreasureChest(ctx: CanvasRenderingContext2D, cx: number, bottomY: n
   rect(ctx, cx - 3, y + 7, 6, 6, '#f2d03b');
 }
 
+/** A heart-shaped praline box (open), centred on (cx, cy). */
+function drawPralineBox(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  full: boolean,
+): void {
+  const heart = (r: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + r * 0.9);
+    ctx.bezierCurveTo(cx - r * 1.4, cy, cx - r * 0.9, cy - r, cx, cy - r * 0.35);
+    ctx.bezierCurveTo(cx + r * 0.9, cy - r, cx + r * 1.4, cy, cx, cy + r * 0.9);
+    ctx.fill();
+  };
+  heart(12, '#a93246');
+  heart(9.5, '#f7d6dc');
+  const spots: [number, number][] = [
+    [-4.5, -2],
+    [0, -1],
+    [4.5, -2],
+    [-2.5, 3],
+    [2.5, 3],
+  ];
+  for (const [dx, dy] of spots) {
+    circle(ctx, cx + dx, cy + dy, 2.4, '#d4ac0d');
+    if (full) circle(ctx, cx + dx, cy + dy - 0.6, 1.9, '#5a3220');
+  }
+}
+
 /** A grown-up NPC: a scaled-up character plus optional hat and beard. */
 function drawPerson(ctx: CanvasRenderingContext2D, look: NpcLook, fx: number, fy: number, facing: Facing): void {
   drawCharacter(ctx, look, fx, fy, facing, 0, NPC_SCALE);
@@ -394,6 +517,13 @@ function drawPerson(ctx: CanvasRenderingContext2D, look: NpcLook, fx: number, fy
       break;
     case 'bun':
       circle(ctx, hx, hy - r * 1.15, r * 0.45, look.hairColor);
+      break;
+    case 'chef':
+      rect(ctx, hx - r * 0.75, hy - r * 1.45, r * 1.5, r * 0.65, '#fdfdfd');
+      circle(ctx, hx - r * 0.45, hy - r * 1.55, r * 0.45, '#fdfdfd');
+      circle(ctx, hx + r * 0.45, hy - r * 1.55, r * 0.45, '#fdfdfd');
+      circle(ctx, hx, hy - r * 1.8, r * 0.5, '#fdfdfd');
+      rect(ctx, hx - r * 0.8, hy - r * 0.88, r * 1.6, r * 0.14, '#d9d9d9');
       break;
   }
 }

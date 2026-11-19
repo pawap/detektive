@@ -36,8 +36,11 @@ export type Interaction =
   | { kind: 'caseBoard' }
   /** Leave home for the active case's first scene. */
   | { kind: 'departure' }
-  /** Run a scripted handler from the active case (see CaseDefinition.events). */
-  | { kind: 'event'; eventId: string };
+  /**
+   * Run a scripted handler from the active case (see CaseDefinition.events),
+   * or from `caseId` if given.
+   */
+  | { kind: 'event'; eventId: string; caseId?: string };
 
 export type ObjectSprite =
   | 'bed'
@@ -71,11 +74,19 @@ export type ObjectSprite =
   | 'parrot'
   | 'boat'
   | 'boots'
-  | 'barrel';
+  | 'barrel'
+  | 'pralineBox'
+  | 'pralineBoxFull'
+  | 'slide'
+  | 'swing'
+  | 'sign'
+  | 'chocolateVat'
+  | 'conveyor'
+  | 'workbench';
 
 /** Look of a non-player character drawn with the `person` sprite. */
 export interface NpcLook extends CharacterAppearance {
-  hat?: 'captain' | 'guard' | 'beret' | 'bun';
+  hat?: 'captain' | 'guard' | 'beret' | 'bun' | 'chef';
   beard?: string;
 }
 
@@ -91,9 +102,9 @@ export interface SceneObject extends Rect {
   /** Which way a `person` looks (default: down). */
   facing?: Facing;
   interaction?: Interaction;
-  /** Only present while this game-state flag is truthy. */
+  /** Only present while this condition holds (a game-state flag, or `solved:<caseId>`). */
   showIf?: string;
-  /** Removed from the scene once this game-state flag is truthy. */
+  /** Removed from the scene once this condition holds (a game-state flag, or `solved:<caseId>`). */
   hideIf?: string;
 }
 

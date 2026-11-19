@@ -1,6 +1,6 @@
 import type { GameStateService } from '../services/game-state.service';
 import { DialogueLine } from './dialogue.model';
-import { SceneDefinition } from './scene.model';
+import { SceneDefinition, SceneObject } from './scene.model';
 
 export interface ClueDefinition {
   id: string;
@@ -27,8 +27,15 @@ export interface CaseDefinition {
   title: string;
   summary: string;
   firstSceneId: string;
+  /** Ids of cases that must be solved before this one shows up on the case board. */
+  requires?: string[];
   /** Scenes that belong to this case (registered automatically). */
   scenes: SceneDefinition[];
+  /**
+   * Objects this case places into scenes it does not own, keyed by scene id
+   * (e.g. people at home). Their `event` interactions run this case's handlers.
+   */
+  extraObjects?: Record<string, SceneObject[]>;
   clues: ClueDefinition[];
   /** Handlers for `{ kind: 'event' }` interactions, keyed by eventId. */
   events?: Record<string, CaseEventHandler>;

@@ -58,7 +58,8 @@ export class Notebook {
   protected readonly text = TEXT;
 
   protected readonly clues = computed(() => {
-    const all = CASES.flatMap((c) => c.clues);
+    // While a case is running, only its clues; otherwise everything collected so far
+    const all = this.state.activeCase()?.clues ?? CASES.flatMap((c) => c.clues);
     return this.state
       .clues()
       .map((id) => all.find((clue) => clue.id === id))

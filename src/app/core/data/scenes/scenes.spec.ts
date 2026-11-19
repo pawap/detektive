@@ -1,9 +1,9 @@
 import { DEFAULT_SPAWN } from '../../config';
 import { SceneDefinition } from '../../models/scene.model';
 import { CASES } from '../cases';
-import { BASE_SCENES } from './index';
+import { buildWorld } from '../world';
 
-const ALL_SCENES: SceneDefinition[] = [...BASE_SCENES, ...CASES.flatMap((c) => c.scenes)];
+const ALL_SCENES: SceneDefinition[] = buildWorld();
 const sceneIds = new Set(ALL_SCENES.map((s) => s.id));
 
 describe.each(ALL_SCENES.map((s) => [s.id, s] as const))('scene "%s"', (_id, scene) => {
@@ -46,7 +46,28 @@ describe.each(ALL_SCENES.map((s) => [s.id, s] as const))('scene "%s"', (_id, sce
 });
 
 describe('cases', () => {
+  const caseIds = new Set(CASES.map((c) => c.id));
+
   it('start in an existing scene', () => {
     for (const c of CASES) expect(sceneIds.has(c.firstSceneId), c.id).toBe(true);
+  });
+
+  it('only require existing cases and add objects to existing scenes', () => {
+    for (const c of CASES) {
+      for (const id of c.requires ?? []) expect(caseIds.has(id), `${c.id} requires ${id}`).toBe(true);
+      for (const sceneId of Object.keys(c.extraObjects ?? {})) expect(sceneIds.has(sceneId), sceneId).toBe(true);
+    }
+  });
+
+  it('have a handler for every event interaction', () => {
+    for (const scene of ALL_SCENES) {
+      const owner = CASES.find((c) => c.scenes.some((s) => s.id === scene.id));
+      for (const o of scene.objects) {
+        const interaction = o.interaction;
+        if (interaction?.kind !== 'event') continue;
+        const caseDef = interaction.caseId ? CASES.find((c) => c.id === interaction.caseId) : owner;
+        expect(caseDef?.events?.[interaction.eventId], `${scene.id}.${o.id}`).toBeDefined();
+      }
+    }
   });
 });

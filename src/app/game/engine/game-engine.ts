@@ -8,7 +8,7 @@ import {
   VIEW_WIDTH,
   WALK_SPEED,
 } from '../../core/config';
-import { CASES } from '../../core/data/cases';
+import { CASES, findCase } from '../../core/data/cases';
 import { CHARACTERS, PARTY_ORDER } from '../../core/data/characters';
 import { CharacterDefinition, CharacterId, Facing } from '../../core/models/character.model';
 import { ACTIVE_SPEAKER, DialogueLine } from '../../core/models/dialogue.model';
@@ -339,9 +339,11 @@ export class GameEngine {
         break;
       }
       case 'event': {
-        // The active case first; otherwise the case this scene belongs to (e.g. after solving it)
+        // An explicit case first, then the active case, then the case this scene belongs to (e.g. after solving it)
         const owner = CASES.find((c) => c.scenes.some((s) => s.id === this.scene.id));
-        const handler = this.state.activeCase()?.events?.[interaction.eventId] ?? owner?.events?.[interaction.eventId];
+        const handler = interaction.caseId
+          ? findCase(interaction.caseId)?.events?.[interaction.eventId]
+          : (this.state.activeCase()?.events?.[interaction.eventId] ?? owner?.events?.[interaction.eventId]);
         if (handler) {
           handler({
             state: this.state,
@@ -395,10 +397,11 @@ export class GameEngine {
     return this.visibleObjects().some((o) => o.solid && overlaps(o, box));
   }
 
-  /** Scene objects whose `showIf` / `hideIf` flags currently let them appear. */
+  /** Scene objects whose `showIf` / `hideIf` conditions currently let them appear. */
   private visibleObjects(): SceneObject[] {
-    const flags = this.state.flags();
-    return this.scene.objects.filter((o) => (!o.showIf || !!flags[o.showIf]) && (!o.hideIf || !flags[o.hideIf]));
+    return this.scene.objects.filter(
+      (o) => (!o.showIf || this.state.isSet(o.showIf)) && (!o.hideIf || !this.state.isSet(o.hideIf)),
+    );
   }
 
   // --- Rendering ----------------------------------------------------------------------
