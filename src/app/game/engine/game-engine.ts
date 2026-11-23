@@ -19,8 +19,15 @@ import { InputService } from '../../core/services/input.service';
 import { OverlayService } from '../../core/services/overlay.service';
 import { SceneRegistry } from '../../core/services/scene-registry.service';
 import { TEXT } from '../../core/texts';
+import { drawAmbience } from '../render/ambience';
 import { drawCharacter } from '../render/character-sprite';
-import { FLAT_SPRITES, drawFocusMarker, drawObject } from '../render/object-sprites';
+import { ObjectAnim } from '../render/critter-sprites';
+import {
+  FLAT_SPRITES,
+  drawFocusMarker,
+  drawObject,
+  drawSoundBubble,
+} from '../render/object-sprites';
 import { drawTiles, tileAt } from '../render/tile-renderer';
 
 interface Actor {
@@ -65,6 +72,16 @@ interface Walker {
 /** How long a person pauses after turning towards the kids before talking (seconds). */
 const TURN_PAUSE_SECONDS = 0.2;
 
+/** How long a poke's sound bubble („MIAU!“) stays up (seconds). */
+const BUBBLE_SECONDS = 1.4;
+
+/** The last time an object was interacted with, for its reaction animation. */
+interface Poke {
+  at: number;
+  count: number;
+  bubble?: string;
+}
+
 const OPPOSITE_FACING: Record<Facing, Facing> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 const FACING_VECTORS: Record<Facing, Point> = {
@@ -106,6 +123,8 @@ export class GameEngine {
   private readonly turnedFacing = new Map<string, Facing>();
   /** A person who just turned towards the kids; the interaction runs once the pause is over. */
   private turning: { obj: SceneObject; t: number } | null = null;
+  /** Objects interacted with during this scene visit (drives their reactions). */
+  private readonly pokes = new Map<string, Poke>();
 
   constructor() {
     for (const def of CHARACTERS) {
@@ -432,7 +451,17 @@ export class GameEngine {
 
   private runInteraction(obj: SceneObject): void {
     const interaction = obj.interaction;
+    const poke: Poke = { at: this.time, count: (this.pokes.get(obj.id)?.count ?? 0) + 1 };
+    this.pokes.set(obj.id, poke);
     switch (interaction?.kind) {
+      case 'poke': {
+        const reactions = interaction.reactions;
+        const reaction = reactions[(poke.count - 1) % reactions.length];
+        if (!reaction) break;
+        poke.bubble = reaction.bubble;
+        if (reaction.lines?.length) this.say(reaction.lines);
+        break;
+      }
       case 'dialogue':
         this.say(interaction.lines);
         break;
@@ -486,9 +515,19 @@ export class GameEngine {
     this.rebuildTrail();
     this.turnedFacing.clear();
     this.turning = null;
+    this.pokes.clear();
     this.exitLocked = true;
     this.focus = null;
     this.focusLabel.set(null);
+  }
+
+  private animOf(obj: SceneObject): ObjectAnim {
+    const poke = this.pokes.get(obj.id);
+    return {
+      time: this.time,
+      poke: poke ? this.time - poke.at : Infinity,
+      pokes: poke?.count ?? 0,
+    };
   }
 
   private leaderPosition(): PartyPosition {
@@ -539,7 +578,8 @@ export class GameEngine {
     );
 
     const objects = this.visibleObjects();
-    for (const obj of objects) if (FLAT_SPRITES.has(obj.sprite)) drawObject(ctx, obj);
+    for (const obj of objects)
+      if (FLAT_SPRITES.has(obj.sprite)) drawObject(ctx, obj, this.animOf(obj));
 
     // Depth-sort everything else by its bottom edge
     const drawables: { depth: number; draw: () => void }[] = [];
@@ -548,10 +588,12 @@ export class GameEngine {
       const walker = this.walker?.objectId === obj.id ? this.walker : null;
       if (walker) {
         const moved = { ...obj, x: walker.x, y: walker.y, facing: walker.facing };
-        drawables.push({ depth: walker.y + obj.h, draw: () => drawObject(ctx, moved, walker.walkTime) });
+        const anim = this.animOf(obj);
+        drawables.push({ depth: walker.y + obj.h, draw: () => drawObject(ctx, moved, anim, walker.walkTime) });
       } else {
         const shown = this.turnedFacing.has(obj.id) ? { ...obj, facing: this.facingOf(obj) } : obj;
-        drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, shown) });
+        const anim = this.animOf(obj);
+        drawables.push({ depth: obj.y + obj.h, draw: () => drawObject(ctx, shown, anim) });
       }
     }
     for (const actor of this.actors.values()) {
@@ -562,7 +604,18 @@ export class GameEngine {
     }
     drawables.sort((a, b) => a.depth - b.depth).forEach((d) => d.draw());
 
-    if (this.focus && !this.isPaused()) drawFocusMarker(ctx, this.focus, this.time);
+    if (scene.ambience) drawAmbience(ctx, scene.ambience, mapW, mapH, this.time);
+
+    let bubbleShown = false;
+    for (const obj of objects) {
+      const poke = this.pokes.get(obj.id);
+      const age = poke ? this.time - poke.at : Infinity;
+      if (poke?.bubble && age < BUBBLE_SECONDS) {
+        drawSoundBubble(ctx, obj, poke.bubble, age, BUBBLE_SECONDS);
+        if (obj === this.focus) bubbleShown = true;
+      }
+    }
+    if (this.focus && !this.isPaused() && !bubbleShown) drawFocusMarker(ctx, this.focus, this.time);
     ctx.restore();
 
     if (this.transition) {

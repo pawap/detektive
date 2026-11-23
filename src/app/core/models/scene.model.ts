@@ -40,7 +40,22 @@ export type Interaction =
    * Run a scripted handler from the active case (see CaseDefinition.events),
    * or from `caseId` if given.
    */
-  | { kind: 'event'; eventId: string; caseId?: string };
+  | { kind: 'event'; eventId: string; caseId?: string }
+  /**
+   * Poke something just for fun: the sprite plays its reaction animation and a
+   * comic sound bubble pops up. Each poke shows the next reaction (cycling);
+   * reactions with `lines` also open a short dialogue.
+   */
+  | { kind: 'poke'; reactions: PokeReaction[] };
+
+export interface PokeReaction {
+  /** Onomatopoeia shown in a bubble above the object, e.g. „MIAU!“. */
+  bubble: string;
+  lines?: DialogueLine[];
+}
+
+/** Scene-wide background animation drawn over the map. */
+export type Ambience = 'leaves' | 'gusts' | 'dust' | 'bubbles';
 
 export type ObjectSprite =
   | 'bed'
@@ -83,7 +98,35 @@ export type ObjectSprite =
   | 'chocolateVat'
   | 'conveyor'
   | 'computerDesk'
-  | 'computerDeskCrumbs';
+  | 'computerDeskCrumbs'
+  // Lively details (animated; see render/critter-sprites.ts)
+  | 'cat'
+  | 'dog'
+  | 'fishbowl'
+  | 'sink'
+  | 'radio'
+  | 'cuckooClock'
+  | 'birdBath'
+  | 'butterflies'
+  | 'bees'
+  | 'windChime'
+  | 'shipBell'
+  | 'mouse'
+  | 'seagull'
+  | 'jumpingFish'
+  | 'buoy'
+  | 'flag'
+  | 'crab'
+  | 'hamster'
+  | 'xylophone'
+  | 'pigeons'
+  | 'squirrel'
+  | 'bicycle'
+  | 'steamWhistle'
+  | 'chocolateFountain'
+  | 'coffeeMachine'
+  | 'printer'
+  | 'fan';
 
 /** Look of a non-player character drawn with the `person` sprite. */
 export interface NpcLook extends CharacterAppearance {
@@ -133,4 +176,6 @@ export interface SceneDefinition {
   exits: SceneExit[];
   /** Colour drawn around the map when it is smaller than the viewport. */
   background: string;
+  /** Background animations (wind-blown leaves, dust motes, …). */
+  ambience?: Ambience[];
 }

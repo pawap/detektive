@@ -39,6 +39,7 @@ src/app/
       cases/lost-pralines.case.ts     case 2: „Der Fall der verlorenen Pralinen“ (unlocks after case 1;
                                       kindergarten, playground, chocolate factory, Papa's office; Mama & Papa at home)
       world.ts                all scenes, with the cases' `extraObjects` merged in
+      lively-details.ts       animals, gadgets & weather per scene (poke them with E – just for fun)
     services/
       game-state.service.ts   progress: scene, flags, items, clues, cases, save/load (localStorage)
       dialogue.service.ts     dialogue queue
@@ -48,6 +49,7 @@ src/app/
   game/
     engine/game-engine.ts     game loop, movement, collision, following siblings, interactions, camera
     render/                   procedural drawing of characters, tiles and furniture (no image assets yet)
+                              critter-sprites.ts: animated animals/gadgets; ambience.ts: leaves, gusts, dust, bubbles
     game-canvas/, hud/, dialogue-box/, overlays/ (case board, notebook, pause menu), character-preview/
   screens/
     title/                    title screen

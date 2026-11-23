@@ -144,7 +144,41 @@ export const HOUSE_SCENE: SceneDefinition = {
       solid: true,
     },
     // Living room
-    { id: 'tv', label: 'Fernseher', sprite: 'tv', x: 2, y: 7, w: 3, h: 1, solid: true },
+    {
+      id: 'tv',
+      label: 'Fernseher',
+      sprite: 'tv',
+      x: 2,
+      y: 7,
+      w: 3,
+      h: 1,
+      solid: true,
+      // Every poke switches to the next channel (see drawTvScreen)
+      interaction: {
+        kind: 'poke',
+        reactions: [
+          { bubble: 'Klick!', lines: [{ speaker: 'nino', text: 'Ein Ball! Ball! BALL!' }] },
+          {
+            bubble: 'Klick!',
+            lines: [
+              {
+                text: 'Wetterbericht: „Morgen sonnig, mit einer leichten Chance auf Pfannkuchen.“',
+              },
+            ],
+          },
+          { bubble: 'KSSSHHH!', lines: [{ speaker: 'maja', text: 'Nur Ameisenfußball.' }] },
+          {
+            bubble: 'Blubb!',
+            lines: [
+              {
+                text: 'Eine Tierdoku über Fische. Der Fisch guckt so verwirrt wie Papa am Morgen.',
+              },
+            ],
+          },
+          { bubble: 'Klick.' },
+        ],
+      },
+    },
     { id: 'rug', label: 'Teppich', sprite: 'rug', color: '#c0504d', x: 2, y: 8.6, w: 4, h: 2, solid: false },
     { id: 'sofa', label: 'Sofa', sprite: 'sofa', color: '#6a7fb5', x: 2, y: 11, w: 4, h: 1, solid: true },
     {

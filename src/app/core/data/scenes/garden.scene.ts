@@ -44,7 +44,29 @@ export const GARDEN_SCENE: SceneDefinition = {
       solid: true,
       interaction: { kind: 'dialogue', lines: [{ speaker: ACTIVE_SPEAKER, text: 'Leer. Vielleicht kommt bald ein Auftrag?' }] },
     },
-    { id: 'tree-1', label: 'Apfelbaum', sprite: 'tree', x: 2, y: 2, w: 2, h: 1, solid: true },
+    {
+      id: 'tree-1',
+      label: 'Apfelbaum',
+      sprite: 'tree',
+      x: 2,
+      y: 2,
+      w: 2,
+      h: 1,
+      solid: true,
+      interaction: {
+        kind: 'poke',
+        reactions: [
+          {
+            bubble: 'Raschel!',
+            lines: [
+              { text: 'Ein Apfel plumpst ins Gras. Knapp neben Nino.' },
+              { speaker: 'nino', text: 'Mein Apfel!' },
+            ],
+          },
+          { bubble: 'Raschel raschel!' },
+        ],
+      },
+    },
     { id: 'tree-2', label: 'Kastanie', sprite: 'tree', x: 19, y: 4, w: 2, h: 1, solid: true },
     { id: 'tree-3', label: 'Birke', sprite: 'tree', x: 4, y: 10, w: 2, h: 1, solid: true },
     {

@@ -1,6 +1,7 @@
 import { DEFAULT_SPAWN } from '../../config';
 import { SceneDefinition } from '../../models/scene.model';
 import { CASES } from '../cases';
+import { LIVELY_DETAILS } from '../lively-details';
 import { buildWorld } from '../world';
 
 const ALL_SCENES: SceneDefinition[] = buildWorld();
@@ -56,6 +57,20 @@ describe('cases', () => {
     for (const c of CASES) {
       for (const id of c.requires ?? []) expect(caseIds.has(id), `${c.id} requires ${id}`).toBe(true);
       for (const sceneId of Object.keys(c.extraObjects ?? {})) expect(sceneIds.has(sceneId), sceneId).toBe(true);
+    }
+  });
+
+  it('only add lively details to existing scenes', () => {
+    for (const sceneId of Object.keys(LIVELY_DETAILS))
+      expect(sceneIds.has(sceneId), sceneId).toBe(true);
+  });
+
+  it('give every poke interaction at least one reaction', () => {
+    for (const scene of ALL_SCENES) {
+      for (const o of scene.objects) {
+        if (o.interaction?.kind === 'poke')
+          expect(o.interaction.reactions.length, `${scene.id}.${o.id}`).toBeGreaterThan(0);
+      }
     }
   });
 

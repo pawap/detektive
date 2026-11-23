@@ -2,6 +2,7 @@ import { TILE_SIZE as T } from '../../core/config';
 import { Facing } from '../../core/models/character.model';
 import { NpcLook, ObjectSprite, SceneObject } from '../../core/models/scene.model';
 import { characterMetrics, drawCharacter } from './character-sprite';
+import { ObjectAnim, STILL, drawCritter, seedOf } from './critter-sprites';
 import { circle, ellipse, rect, roundRect, shade } from './draw-utils';
 
 /** Sprites that lie flat on the floor and are drawn below everything else. */
@@ -14,12 +15,20 @@ const NPC_SCALE = 1.2;
  * Draws a furniture/prop placeholder. Everything is procedural so the game
  * runs without image assets; swap individual cases for real sprites later.
  */
-export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walkTime = 0): void {
+export function drawObject(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneObject,
+  anim: ObjectAnim = STILL,
+  walkTime = 0,
+): void {
   const x = obj.x * T;
   const y = obj.y * T;
   const w = obj.w * T;
   const h = obj.h * T;
   const color = obj.color;
+  /** Per-object time, so trees etc. don't all sway in sync. */
+  const t = anim.time + seedOf(obj.id) * 10;
+  if (drawCritter(ctx, obj, x, y, w, h, anim)) return;
 
   switch (obj.sprite) {
     case 'bed':
@@ -113,7 +122,7 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
     case 'tv':
       rect(ctx, x + w / 2 - 14, y + h - 8, 28, 6, '#555');
       roundRect(ctx, x + 6, y - 6, w - 12, h - 2, 3, '#222');
-      rect(ctx, x + 9, y - 3, w - 18, h - 8, '#2f4f6f');
+      drawTvScreen(ctx, x + 9, y - 3, w - 18, h - 8, anim);
       break;
     case 'shelf': {
       rect(ctx, x + 2, y - 16, w - 4, h + 14, '#7a4b2a');
@@ -152,7 +161,9 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
     case 'tree': {
       rect(ctx, x + w / 2 - 6, y - 10, 12, h + 6, '#7a4b2a');
       ellipse(ctx, x + w / 2, y + h - 2, w / 2.2, 6, 'rgba(0,0,0,0.18)');
-      const cx = x + w / 2;
+      // Swaying in the wind (and shaking when poked)
+      const shake = anim.poke < 1 ? Math.sin(anim.poke * 30) * 3 * (1 - anim.poke) : 0;
+      const cx = x + w / 2 + Math.sin(t * 1.3) * 1.5 + shake;
       const cy = y - 26;
       circle(ctx, cx, cy, 26, '#3f8f45');
       circle(ctx, cx - 16, cy + 8, 18, '#469c4c');
@@ -180,8 +191,11 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       roundRect(ctx, x, y + 4, w, h - 6, 4, '#7a4b2a');
       const petals = ['#e74c3c', '#f1c40f', '#ffffff', '#e84393', '#9b59b6'];
       for (let i = 0, fx = x + 6; fx < x + w - 4; fx += 10, i++) {
-        circle(ctx, fx, y + 10 + (i % 2) * 6, 4, petals[i % petals.length]);
-        circle(ctx, fx, y + 10 + (i % 2) * 6, 1.5, '#f39c12');
+        const sway = Math.sin(t * 2 + i) * 1.5;
+        const fy = y + 10 + (i % 2) * 6;
+        rect(ctx, fx - 0.5, fy, 1, 6, '#3f8f45');
+        circle(ctx, fx + sway, fy, 4, petals[i % petals.length]);
+        circle(ctx, fx + sway, fy, 1.5, '#f39c12');
       }
       break;
     }
@@ -266,18 +280,22 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       rect(ctx, cx - 10, y + 2, 20, 3, '#7a4b2a');
       ellipse(ctx, cx, y - 6, 6, 9, '#3fae49');
       ellipse(ctx, cx - 2, y - 4, 3, 6, '#2e8b3a');
-      circle(ctx, cx, y - 16, 5, '#f2d03b');
-      circle(ctx, cx + 2, y - 17, 1.2, '#222222');
+      // Head-bobbing like a little rock star
+      const hb = Math.sin(t * 4) > 0.4 ? 1.5 : 0;
+      circle(ctx, cx, y - 16 + hb, 5, '#f2d03b');
+      circle(ctx, cx + 2, y - 17 + hb, 1.2, '#222222');
       ctx.fillStyle = '#e67e22';
       ctx.beginPath();
-      ctx.moveTo(cx + 4, y - 17);
-      ctx.lineTo(cx + 9, y - 14);
-      ctx.lineTo(cx + 4, y - 12);
+      ctx.moveTo(cx + 4, y - 17 + hb);
+      ctx.lineTo(cx + 9, y - 14 + hb);
+      ctx.lineTo(cx + 4, y - 12 + hb);
       ctx.fill();
       break;
     }
     case 'boat': {
       const c = color ?? '#c0392b';
+      ctx.save();
+      ctx.translate(0, Math.round(Math.sin(t * 1.4) * 1.5));
       const deck = y + h * 0.35;
       const mastX = x + w * 0.35;
       rect(ctx, mastX, y - 40, 4, deck - y + 40, '#5c361d');
@@ -305,6 +323,7 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('SEESCHNECKE', x + w / 2, y + h * 0.68);
+      ctx.restore();
       break;
     }
     case 'boots':
@@ -354,13 +373,18 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       rect(ctx, x + 2, y - 28, 4, h + 26, '#5c361d');
       rect(ctx, x + w - 6, y - 28, 4, h + 26, '#5c361d');
       rect(ctx, x, y - 30, w, 5, '#7a4b2a');
-      for (const [sx, c] of [
-        [x + w * 0.3, '#f1c40f'],
-        [x + w * 0.7, '#2e86c1'],
+      for (const [i, sx, c] of [
+        [0, x + w * 0.3, '#f1c40f'],
+        [1, x + w * 0.7, '#2e86c1'],
       ] as const) {
-        rect(ctx, sx - 7, y - 25, 1, h + 6, '#3d3d3d');
-        rect(ctx, sx + 6, y - 25, 1, h + 6, '#3d3d3d');
-        rect(ctx, sx - 8, y + h - 20, 16, 4, c);
+        // Swaying gently in the wind
+        ctx.save();
+        ctx.translate(sx, y - 25);
+        ctx.rotate(Math.sin(t * 1.6 + i * 2) * 0.08);
+        rect(ctx, -7, 0, 1, h + 6, '#3d3d3d');
+        rect(ctx, 6, 0, 1, h + 6, '#3d3d3d');
+        rect(ctx, -8, h + 5, 16, 4, c);
+        ctx.restore();
       }
       break;
     }
@@ -381,16 +405,48 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       ellipse(ctx, x + w / 2, y - 4, w / 2 - 4, 8, '#8e5a28');
       ellipse(ctx, x + w / 2, y - 3, w / 2 - 8, 6, '#5a3220');
       ellipse(ctx, x + w / 2 - 6, y - 4, 6, 2, '#7b4a2e');
-      rect(ctx, x + w / 2 + 6, y - 26, 4, 24, '#a0703d');
+      // Blubb … blubb …
+      for (let i = 0; i < 3; i++) {
+        const k = (t * 0.8 + i / 3) % 1;
+        const bx = x + w / 2 - 14 + i * 11;
+        if (k < 0.8) circle(ctx, bx, y - 3, 1 + k * 3, '#7b4a2e');
+        else {
+          ctx.strokeStyle = 'rgba(123, 74, 46, 0.8)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.arc(bx, y - 3 - (k - 0.8) * 20, 2, Math.PI, 0);
+          ctx.stroke();
+        }
+      }
+      // The paddle stirs round and round
+      const stir = Math.sin(t * 1.5) * 8;
+      rect(ctx, x + w / 2 + 6 + stir, y - 26, 4, 24, '#a0703d');
+      for (let i = 0; i < 2; i++) {
+        const k = (t * 0.3 + i / 2) % 1;
+        circle(
+          ctx,
+          x + w / 2 - 8 + i * 14 + Math.sin(k * 6) * 4,
+          y - 10 - k * 24,
+          3 + k * 4,
+          `rgba(244, 230, 210, ${(1 - k) * 0.35})`,
+        );
+      }
       break;
     }
     case 'conveyor': {
       rect(ctx, x + 4, y + 10, 4, h - 10, '#7f8c8d');
       rect(ctx, x + w - 8, y + 10, 4, h - 10, '#7f8c8d');
       roundRect(ctx, x, y + 2, w, 10, 5, '#3d3d3d');
-      for (let px = x + 10; px < x + w - 8; px += 16) {
+      const shift = (anim.time * 12) % 16;
+      for (let px = x + 10 + shift - 16; px < x + w - 8; px += 16) {
+        if (px < x + 6) continue;
         circle(ctx, px, y + 2, 4.5, '#d4ac0d');
         circle(ctx, px, y + 0.5, 3.5, '#6b3e26');
+      }
+      for (const rx of [x + 5, x + w - 5]) {
+        const a = anim.time * 4;
+        circle(ctx, rx, y + 7, 3, '#5d5d5d');
+        rect(ctx, rx + Math.cos(a) * 2 - 0.5, y + 7 + Math.sin(a) * 2 - 0.5, 1, 1, '#b7c0ca');
       }
       break;
     }
@@ -426,6 +482,108 @@ export function drawObject(ctx: CanvasRenderingContext2D, obj: SceneObject, walk
       break;
     }
   }
+}
+
+/** The TV screen: every poke switches to the next channel. */
+function drawTvScreen(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  anim: ObjectAnim,
+): void {
+  const t = anim.time;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  switch (anim.pokes % 5) {
+    case 0:
+      // Off: just a reflection
+      rect(ctx, x, y, w, h, '#2f4f6f');
+      rect(ctx, x + 6, y + 3, 10, 2, 'rgba(255,255,255,0.25)');
+      break;
+    case 1: {
+      // Cartoon: a bouncing ball
+      rect(ctx, x, y, w, h, '#9fd3f2');
+      rect(ctx, x, y + h - 5, w, 5, '#7cc06a');
+      const bx = x + 8 + ((t * 30) % (w - 16));
+      const by = y + h - 9 - Math.abs(Math.sin(t * 5)) * (h - 12);
+      circle(ctx, bx, by, 4, '#e74c3c');
+      rect(ctx, bx - 1, by - 4, 2, 8, '#f4f1e6');
+      break;
+    }
+    case 2:
+      // Weather: sun and a cloud drifting by
+      rect(ctx, x, y, w, h, '#5dade2');
+      circle(ctx, x + w * 0.3, y + h / 2, 6 + Math.sin(t * 3) * 0.8, '#f1c40f');
+      ellipse(ctx, x + ((t * 10) % (w + 20)) - 10, y + h / 2 + 2, 9, 4, '#f4f6f8');
+      break;
+    case 3:
+      // Snow
+      rect(ctx, x, y, w, h, '#555');
+      for (let i = 0; i < 60; i++) {
+        const sx = x + ((i * 37 + Math.floor(t * 30) * 13) % w);
+        const sy = y + ((i * 23 + Math.floor(t * 30) * 7) % h);
+        rect(ctx, sx, sy, 2, 1, i % 2 ? '#ddd' : '#999');
+      }
+      break;
+    case 4: {
+      // Nature documentary: a fish
+      rect(ctx, x, y, w, h, '#1f5f8b');
+      const fx = x + w / 2 + Math.sin(t) * (w / 3);
+      const dir = Math.cos(t) > 0 ? 1 : -1;
+      ellipse(ctx, fx, y + h / 2, 6, 3.5, '#f39c12');
+      ctx.fillStyle = '#e67e22';
+      ctx.beginPath();
+      ctx.moveTo(fx - 5 * dir, y + h / 2);
+      ctx.lineTo(fx - 10 * dir, y + h / 2 - 4);
+      ctx.lineTo(fx - 10 * dir, y + h / 2 + 4);
+      ctx.fill();
+      circle(ctx, fx + 6 * dir, y + h / 2 - 6 - ((t * 8) % 8), 1, 'rgba(255,255,255,0.7)');
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+/** Comic sound bubble („MIAU!“) floating up above a poked object. */
+export function drawSoundBubble(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneObject,
+  text: string,
+  age: number,
+  duration: number,
+): void {
+  const k = age / duration;
+  const cx = (obj.x + obj.w / 2) * T;
+  const cy = Math.max(obj.y * T - 42, 14) - k * 14;
+  const pop = age < 0.15 ? 0.6 + (age / 0.15) * 0.4 : 1;
+  ctx.save();
+  ctx.globalAlpha = k > 0.75 ? (1 - k) / 0.25 : 1;
+  ctx.translate(cx, cy);
+  ctx.scale(pop, pop);
+  ctx.rotate(Math.sin(age * 9) * 0.05);
+  ctx.font = 'bold 11px system-ui, sans-serif';
+  const width = ctx.measureText(text).width + 14;
+  roundRect(ctx, -width / 2, -10, width, 20, 9, '#fffbe6');
+  ctx.fillStyle = '#fffbe6';
+  ctx.beginPath();
+  ctx.moveTo(-5, 9);
+  ctx.lineTo(0, 16);
+  ctx.lineTo(4, 9);
+  ctx.fill();
+  ctx.strokeStyle = '#3b2f2f';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-width / 2, -10, width, 20, 9);
+  ctx.stroke();
+  ctx.fillStyle = '#c0392b';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, 0.5);
+  ctx.restore();
 }
 
 /** Bouncing marker above the object the leader could interact with. */
